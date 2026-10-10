@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Model weights and large downloads never go in git (the HF cache lives in ~/.cache/huggingface)
+*.safetensors
+*.bin
+*.pt
+data/raw/
+
+# Profiler output (kept out of git unless copied into a results folder on purpose)
+*.nsys-rep
+*.ncu-rep
+*.json.gz
+
+# Editor and OS clutter
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Note: traces/ and results/ are tracked on purpose (CLAUDE.md)
