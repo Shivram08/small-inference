@@ -15,7 +15,7 @@ The point is understanding, not just a working engine. Every component should be
 
 ## Hardware and environment
 
-- **GPU:** RTX 3050 Laptop, 6 GB GDDR6, Ampere (compute capability 8.6), 16 SMs.
+- **GPU:** RTX 3050 Laptop, 6 GB GDDR6, Ampere (compute capability 8.6), 20 SMs (full GA107, measured; the 4 GB variant has 16).
   - bf16 and Triton are supported. **FP8 is not** (needs Ada/Hopper), so quantization uses INT8.
   - Memory bandwidth is roughly 190–220 GB/s on spec. Use the **measured** value from `results/roofline/` for all analysis.
 - **OS:** Linux or WSL2. Triton and vLLM target Linux.
