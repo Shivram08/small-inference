@@ -9,13 +9,13 @@ Every milestone runs through the same loop: concept discussion with real numbers
 ## Step 0: Environment
 
 - [x] `git init -b main`, `.gitignore` (weights, venvs, profiler output; `traces/` and `results/` tracked), `.gitattributes` (LF everywhere)
-- [ ] git identity + first commit
+- [x] git identity (Shivram08) + first commit (8ec1175). GitHub auth exists on Windows only; set up gh in WSL before the first push
 - [x] Repo moved to WSL ext4 at `~/Small_Inference` (checksums verified, CRLF converted to LF). `E:\Small_Inference` is the stale original, to delete once we've confirmed the move
 - [x] Ubuntu 24.04 installed in WSL2 and set as the default distro
-- [x] GPU access inside WSL: `nvidia-smi` and `nvidia-smi -q -d PERFORMANCE` work. Vivobook Pro 15 N6506MJ (Optimus: display on the Intel Arc iGPU, dGPU at 0 MiB used, so all 6 GB is ours). The NVML failure earlier was transient (dGPU idle-powered-off), not a setting. Power cap 60 W. Every "Clocks Event Reasons" field is readable in WSL
+- [x] GPU access inside WSL: `nvidia-smi` and `nvidia-smi -q -d PERFORMANCE` work. Vivobook Pro 15 N6506MJ (Optimus: display on the Intel Arc iGPU, dGPU at 0 MiB used, so all 6 GB is ours). The NVML failure earlier was transient (dGPU idle-powered-off), not a setting. Power limit 75 W when plugged in with Best performance + fan Performance (60 W default + about 15 W Dynamic Boost; 30 W in Balanced mode). Every "Clocks Event Reasons" field is readable in WSL
 - [ ] Driver: update from 566.07 / CUDA 12.7 (Oct 2024) to the current NVIDIA driver, on Windows only, never inside WSL
 - [ ] RAM: 16 GB total, Windows at 96% used, WSL gets about 7.7 GB. Watch this for ShareGPT parsing and model loading
-- [ ] Python environment inside WSL with pinned torch, triton, transformers, safetensors, numpy, pytest, matplotlib
+- [x] Python environment inside WSL with pinned torch, triton, transformers, safetensors, numpy, pytest, matplotlib. Managed by uv 0.13.0 (`~/.local/bin/uv`; no sudo, and system Python lacks `ensurepip`). `.venv/` on system Python 3.12.3. Direct deps pinned with `==` in `pyproject.toml`, transitive deps in `uv.lock`. Pins: torch 2.14.1+cu130 (from the PyTorch cu130 index; arch list includes sm_86), triton 3.8.0, transformers 5.19.0, safetensors 0.8.0, huggingface-hub 2.2.0, numpy 2.5.3, matplotlib 3.11.2, pytest 9.1.1. Recreate with `uv sync`
 - [ ] Sanity checks: `torch.cuda.is_available()`, bf16 matmul, Triton vector-add
 - [ ] HF cache on the WSL filesystem, with Qwen2.5-0.5B-Instruct downloaded
 - [ ] Repo skeleton from the CLAUDE.md layout, plus an empty `docs/design-log.md`
@@ -111,3 +111,4 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 - 2026-10-10: Plan created.
 - 2026-10-10: Ubuntu 24.04 installed, GPU visible in WSL, repo moved to `~/Small_Inference`, git initialized. Decided to update the driver.
+- 2026-10-10: Python env created with uv (torch 2.14.1+cu130). Picked cu130 over cu128 because the driver supports CUDA 13.4 and cu128 wheels stop at torch 2.11.
