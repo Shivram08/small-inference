@@ -27,10 +27,14 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - One `step()` = one forward pass. For a batch-1 engine, a prefill step returns 1 token.
   - Fake engine with parameters a (s/token of prefill) and b (s/decode step), batch-1 FIFO.
   - Waits by sleeping until 1 ms before the deadline, then spinning. Measured on WSL across 5 runs of 40 × 5 ms steps: median lateness 3 µs, worst 0.35 ms (preemption). Prefill 30 ms → 30.01 ms
-- [ ] **M0.2 Runner** (`bench/runner.py`)
+- [x] **M0.2 Runner** (`bench/runner.py`, `bench/env.py`). Mechanics gate: `tests/test_runner.py` (9 pass). The statistical gate is M0.4
   - Open-loop replay. After each step, admit every request with `arrival_s ≤ now` and record its *scheduled* arrival time.
-  - Idle wait: sleep until about 1 ms before the next arrival, then spin. Measure how late the sleep wakes up on WSL.
+  - Idle wait: sleep until about 1 ms before the next arrival, then spin. Measured on WSL: idle admission lag 16 µs mean, 23 µs max.
   - `time.perf_counter()` everywhere. Log queue depth every step.
+  - Queue depth is counted by scheduled arrival, from the runner side (the protocol stays unchanged): `outstanding` = arrived − finished, `waiting` = arrived − has a first token.
+  - 2 warmup requests (negative ids, output capped at 8) run before t0 and aren't recorded. Every run drains fully. Contract violations raise.
+  - Output: `requests.jsonl` (with `output_ids`, for comparing engines token by token later), `steps.jsonl`, `env.json` (static env + `nvidia-smi` before/after, including the cumulative throttle counters), `run.json`. Folders are never overwritten.
+  - Runner overhead between steps is 17–39 µs in a demo run (end of step k to start of step k+1; only a few samples so far). At 5 ms per fake decode step that is 0.3–0.8%, and it shows up in measured TPOT. M0.4 should measure it properly and set tolerances to match
 - [ ] **M0.3 Metrics** (`bench/metrics.py`)
   - Write raw `requests.jsonl` first. Summaries come from the raw records.
   - To decide: drop the warmup 10% by arrival order or by completion order? How to define "queue still growing" for the overload flag?
