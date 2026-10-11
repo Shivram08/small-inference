@@ -9,7 +9,7 @@ from pathlib import Path
 
 GPU_FIELDS = [
     "name", "driver_version", "pstate", "clocks.sm", "clocks.mem", "clocks.max.sm", "clocks.max.mem",
-    "temperature.gpu", "power.draw", "power.limit", "clocks_event_reasons.active",
+    "temperature.gpu", "power.draw", "power.limit", "enforced.power.limit", "clocks_event_reasons.active",
 ]
 REPO = Path(__file__).resolve().parent.parent
 
@@ -48,7 +48,7 @@ def gpu_snapshot() -> dict:
     return snap
 
 
-def static_env(trace_path: Path) -> dict:
+def static_env(trace_path: Path | None = None) -> dict:
     """Everything about the run's setup that does not change during the run."""
     def version(pkg: str) -> str | None:
         try:
@@ -68,6 +68,6 @@ def static_env(trace_path: Path) -> dict:
         "cuda_device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         "git_commit": commit.strip() if commit else None,
         "git_dirty": bool(status.strip()) if status is not None else None,
-        "trace_path": str(trace_path),
-        "trace_sha256": sha256_file(trace_path),
+        "trace_path": str(trace_path) if trace_path else None,
+        "trace_sha256": sha256_file(trace_path) if trace_path else None,
     }
