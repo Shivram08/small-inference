@@ -9,6 +9,7 @@ pytestmark = pytest.mark.skipif(not torch.cuda.is_available(), reason="needs a C
 
 
 def test_cuda_device():
+    """The GPU is the expected Ampere part with bf16, and torch was built for sm_86."""
     props = torch.cuda.get_device_properties(0)
     free, total = torch.cuda.mem_get_info()
     print(f"\n{props.name}: cc {props.major}.{props.minor}, {props.multi_processor_count} SMs, "
@@ -19,6 +20,7 @@ def test_cuda_device():
 
 
 def test_bf16_matmul():
+    """A 4096^3 bf16 matmul matches an fp64 reference to within bf16 rounding error."""
     torch.manual_seed(0)
     a = torch.randn(4096, 4096, device="cuda")
     b = torch.randn(4096, 4096, device="cuda")
@@ -33,6 +35,7 @@ def test_bf16_matmul():
 
 @triton.jit
 def _add_kernel(x_ptr, y_ptr, out_ptr, n, BLOCK: tl.constexpr):
+    """out = x + y. Each program handles one BLOCK-sized slice; the mask guards the ragged tail."""
     offs = tl.program_id(0) * BLOCK + tl.arange(0, BLOCK)
     mask = offs < n
     x = tl.load(x_ptr + offs, mask=mask)
@@ -42,6 +45,7 @@ def _add_kernel(x_ptr, y_ptr, out_ptr, n, BLOCK: tl.constexpr):
 
 @pytest.mark.parametrize("n", [2**24, 2**24 + 17, 1])  # exact multiple of BLOCK, ragged tail, single element
 def test_triton_vector_add(n):
+    """Triton can JIT-compile and launch a kernel, and the result matches torch exactly."""
     x = torch.randn(n, device="cuda")
     y = torch.randn(n, device="cuda")
     out = torch.empty_like(x)

@@ -8,6 +8,7 @@ SPIN_S = 1e-3  # sleep until this far before the deadline, then spin (time.sleep
 
 
 def wait_until(deadline: float) -> None:
+    """Block until perf_counter() >= deadline. Never returns early; typically a few µs late."""
     remaining = deadline - time.perf_counter()
     if remaining > SPIN_S:
         time.sleep(remaining - SPIN_S)
@@ -32,6 +33,7 @@ class FakeEngine:
         self.running: _Request | None = None
 
     def add_request(self, req_id: int, prompt_ids: list[int], output_len: int) -> None:
+        """Append a request to the FIFO queue. Only the prompt length matters for timing."""
         if not prompt_ids:
             raise ValueError("prompt_ids must be non-empty")
         if output_len < 2:
@@ -39,6 +41,7 @@ class FakeEngine:
         self.waiting.append(_Request(req_id, len(prompt_ids), output_len))
 
     def step(self) -> list[tuple[int, int, bool]]:
+        """Prefill the next waiting request (cost a*P) or decode the running one (cost b), emitting one token."""
         start = time.perf_counter()
         if self.running is None:
             if not self.waiting:
@@ -58,4 +61,5 @@ class FakeEngine:
         return [(req.req_id, token_id, finished)]
 
     def has_unfinished(self) -> bool:
+        """True while a request is running or waiting."""
         return self.running is not None or bool(self.waiting)
