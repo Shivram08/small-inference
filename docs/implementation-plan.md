@@ -50,9 +50,14 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - ρ = 0.4 (250 Poisson requests, seed 42): achieved = offered = 17.76, queue slope ≈ 0.005 req/s against a 0.89 threshold, so no flag. ρ = 1.2 (150 requests): offered 58.5 (realized Poisson; nominal 52.2), achieved 41.7–43.2 ≈ capacity, slope 10–12 req/s, both conditions fire.
   - `bench/trace.py` started with `poisson_arrivals` and `write_trace`. Mean gap within 4 SE of 1/λ at n = 20,000.
   - The default `pytest` skips slow tests (`addopts = -m 'not slow'`). Rerun `-m slow` after any change to the runner, metrics, or fake engine
-- [ ] **M0.5 Traces** (`bench/trace.py`)
+- [x] **M0.5 Traces** (`bench/trace.py`). Gate: `tests/test_trace.py` (10 pass, synthetic ShareGPT + real tokenizer)
   - ShareGPT V3, Qwen tokenizer, filters (prompt ≤ 1024, output 4–512, total ≤ 2048). One fixed sample → several rates plus a burst trace, with a sidecar file.
-  - Open question: HF has S ≈ 4–6 s, so 0.3× capacity is about 0.06 req/s, and 200 requests would take about 55 min. Choose n per rate and possibly cap `output_len`. Record the choice in the design log.
+  - Only conversations whose first two turns are human → gpt (58,787 of 94,145). The 33,826 that start with gpt are later chunks of split conversations, with no first prompt.
+  - Prompt = human turn in the Qwen chat template (default system prompt + generation prompt, +29 tokens). `output_len` = raw token count of the gpt reply.
+  - Arrivals at every rate come from the same arrival seed (sample seed + 1), so traces at different rates are exact rescalings of each other.
+  - `json.load` of the 673 MB file: 1.51 GiB peak, 4.7 s. A full build: 2.3 GB peak, 17 s. No streaming parser needed.
+  - Decided: **n = 100 per trace, seed 0, no output cap.** Estimated HF S ≈ 5 s → about 54 min per repetition of burst + 3 rates, about 2.7 h for 3 repetitions. The rate traces are built in M0.7, once S is measured.
+  - Built `traces/sharegpt_n100_seed0_burst`: prompt mean 124 / p50 52 / max 927, output mean 230 / p50 242 / p90 417 / max 494 tokens
 - [ ] **M0.6 Roofline** (`bench/roofline.py`)
   - Bandwidth: 512 MB copy. Expect about 170–200 GB/s.
   - bf16 matmul peak: expect about 10–13 TFLOP/s (GeForce Ampere runs fp32 accumulation at half rate), so the ridge is about 55–65 FLOP/B.
