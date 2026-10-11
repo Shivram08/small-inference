@@ -59,7 +59,8 @@ def static_env(trace_path: Path | None = None) -> dict:
     import torch  # deferred: only needed here, and slow to import
 
     commit = _run(["git", "-C", str(REPO), "rev-parse", "HEAD"])
-    status = _run(["git", "-C", str(REPO), "status", "--porcelain"])
+    # results/ is excluded: earlier runs' output folders would otherwise mark every later run dirty.
+    status = _run(["git", "-C", str(REPO), "status", "--porcelain", "--", ".", ":!results"])
     return {
         "python": platform.python_version(),
         "platform": platform.platform(),

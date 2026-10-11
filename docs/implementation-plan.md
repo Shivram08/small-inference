@@ -58,11 +58,16 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - `json.load` of the 673 MB file: 1.51 GiB peak, 4.7 s. A full build: 2.3 GB peak, 17 s. No streaming parser needed.
   - Decided: **n = 100 per trace, seed 0, no output cap.** Estimated HF S ≈ 5 s → about 54 min per repetition of burst + 3 rates, about 2.7 h for 3 repetitions. The rate traces are built in M0.7, once S is measured.
   - Built `traces/sharegpt_n100_seed0_burst`: prompt mean 124 / p50 52 / max 927, output mean 230 / p50 242 / p90 417 / max 494 tokens
-- [ ] **M0.6 Roofline** (`bench/roofline.py`)
-  - Bandwidth: 512 MB copy. Expect about 170–200 GB/s.
-  - bf16 matmul peak: expect about 10–13 TFLOP/s (GeForce Ampere runs fp32 accumulation at half rate), so the ridge is about 55–65 FLOP/B.
-  - Decode sweep K = 896, N = 4864: I ≈ 1 at M = 1 and about 59 at M = 64, so it should cross the ridge near M ≈ 64.
-  - Launch overhead: per-launch µs × profiled kernel count per decode step (estimate: about 850 launches, about 5 ms).
+- [x] **M0.6 Roofline** (`bench/roofline.py`, `tests/test_roofline.py`). 3 runs at f9366ad: `results/roofline/20261011-162332`, `-162407`, `-162439`. Plugged in, Best performance, enforced power limit 75–82 W, no throttle-counter increase during any run, GPU 64–67 °C after. Runs 2 and 3 have a false `git_dirty: true` (untracked `results/` was counted; fixed in env.py afterwards)
+  - Bandwidth: 512 MB copy. Expected about 170–200 GB/s. **Measured 156.2 GB/s** (3-run spread 0.07; within-run 153.6–156.6). The theoretical number for this SKU is 96-bit × 14 Gbps = 168 GB/s, not 190–220, so this is 93% of theoretical.
+  - bf16 matmul peak: expected about 10–13 TFLOP/s. **Measured 18.66 TFLOP/s** (spread 0.18, best at n = 6144; 15.0 at n = 1024). That matches 20 SMs × 512 FLOP/clk (fp32 accumulate) × ~1.8 GHz. **Ridge = 119.5 FLOP/B**, not 55–65.
+  - Decode sweep K = 896, N = 4864: I ≈ 1 at M = 1 and about 59 at M = 64. It crosses the ridge near **M ≈ 128–192**, not 64.
+    - M = 1–2: 131–133 GB/s (84–85% of BW), a GEMV-like kernel.
+    - **M = 4–16: falls to 73–89 GB/s.** M = 4 takes 120 µs vs 66 µs at M = 2 for the same bytes; cuBLAS switches kernels. Batch 4–16 decode GEMMs are worse per step than batch 2.
+    - M = 32–128: 111–114 GB/s, about 72% of BW.
+    - M = 192: a step from 92 to 139 µs (tile/wave quantization). M = 256–512: 14.3–15.8 TFLOP/s, 77–85% of peak (K = 896 is a short reduction).
+  - Launch overhead: per-launch µs × profiled kernel count per decode step. Estimated about 850 launches and 5 ms. **Measured 11.3 µs per eager launch** (`x.add_`, spread 0.9) × **1006 kernels per HF decode step** (prompt 128, batch 1; about 42 per layer) = **11.4 ms**.
+  - HF decode step wall time: **25.4–30.7 ms** (run medians), versus the 6.3 ms bandwidth bound (988 MB of weights / 156 GB/s → **158 tok/s**). HF batch 1 runs at about 25% of the bound and is CPU-bound: launch overhead alone is about 1.8× the GPU time, and the rest is Python module overhead. S estimate for M0.7: 230 tokens × ~26 ms ≈ 6 s
 - [ ] **M0.7 HF baseline** (`bench/engines/hf.py`)
   - Manual prefill/decode loop, `.item()` before taking the timestamp.
   - Burst trace → S → 0.3×, 0.7×, 1.2× capacity, each run 3 times, each with `env.json`.
