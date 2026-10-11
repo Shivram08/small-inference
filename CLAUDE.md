@@ -17,7 +17,8 @@ The point is understanding, not just a working engine. Every component should be
 
 - **GPU:** RTX 3050 Laptop, 6 GB GDDR6, Ampere (compute capability 8.6), 20 SMs (full GA107, measured; the 4 GB variant has 16).
   - bf16 and Triton are supported. **FP8 is not** (needs Ada/Hopper), so quantization uses INT8.
-  - Memory bandwidth is roughly 190–220 GB/s on spec. Use the **measured** value from `results/roofline/` for all analysis.
+  - Memory bandwidth: 168 GB/s theoretical (96-bit GDDR6 at 14 Gbps). **Measured 156 GB/s** (`results/roofline/20261011-*`). Use the measured value for all analysis.
+  - Measured bf16 matmul peak: 18.7 TFLOP/s, so the ridge point is about 120 FLOP/B.
 - **OS:** Linux or WSL2. Triton and vLLM target Linux.
 - **Laptop benchmarking rules:** run plugged in, in the highest power mode. Warm up before timing. Report at least 3 repetitions as mean and spread. Check throttle reasons (`nvidia-smi -q -d PERFORMANCE`) before and after each run.
 
@@ -134,9 +135,10 @@ The fake engine sleeps a·P for prefill and b per decode step. Tests must verify
 
 ## Key reasoning to keep in mind
 
-- **Decode linear layers have arithmetic intensity ≈ batch size**, so batching is what makes them efficient.
+- **Decode linear layers have arithmetic intensity ≈ batch size**, so batching is what makes them efficient. With a ridge of about 120 FLOP/B, they stay memory-bound up to batch ≈ 128–192.
+- **cuBLAS dip at small batch:** for [M, 896] × [896, 4864], M = 1–2 gets 131–133 GB/s, but **M = 4–16 drops to 73–89 GB/s** (M = 4 takes 120 µs vs 66 µs at M = 2, for the same bytes), because cuBLAS switches kernels. M = 32–128 recovers to about 112 GB/s. A throughput dip at batch 4–16 in Phase 4 is cuBLAS, not the scheduler.
 - **Decode attention has arithmetic intensity = g (GQA group size)** regardless of batch, because each sequence reads its own cache. Judge the attention kernel by achieved bandwidth against the measured BW, aiming for 60–80%.
-- **Batch-1 upper bound** is bandwidth ÷ weight bytes, about 190 tok/s for 0.5B and about 62 tok/s for 1.5B. For small models, Python and launch overhead can match the GPU time, which motivates CUDA graphs (a Phase 4 stretch goal).
+- **Batch-1 upper bound** is bandwidth ÷ weight bytes: **158 tok/s for 0.5B** (988 MB / 156 GB/s = 6.3 ms) and about 50 tok/s for 1.5B. For small models, Python and launch overhead exceed the GPU time. HF eager does 1006 kernels per decode step at 11.3 µs per launch, which is 11.4 ms of launch overhead alone, and a measured step of 25–31 ms. That motivates CUDA graphs (a Phase 4 stretch goal).
 - **Store keys after RoPE.** Positions are absolute.
 - **Quantization eval pitfall:** single-shot prefill attends to fresh bf16 K/V and hides quantization error. Evaluate perplexity through chunked prefill (32–64 token chunks).
 

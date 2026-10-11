@@ -163,19 +163,23 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
 
 
 def main() -> None:
-    """CLI: replay a trace against the fake engine (real engines are added as they are built)."""
+    """CLI: replay a trace against the fake or HF engine."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--trace", type=Path, required=True)
-    p.add_argument("--engine", choices=["fake"], default="fake")
+    p.add_argument("--engine", choices=["fake", "hf"], default="fake")
     p.add_argument("--a", type=float, default=1e-4, help="fake: prefill seconds per prompt token")
     p.add_argument("--b", type=float, default=5e-3, help="fake: seconds per decode step")
     p.add_argument("--results-root", type=Path, default=Path("results"))
     p.add_argument("--warmup", type=int, default=2)
     args = p.parse_args()
 
-    from bench.engines.fake import FakeEngine
-    engine = FakeEngine(a=args.a, b=args.b)
-    run_dir = run(engine, args.trace, args.engine, {"a": args.a, "b": args.b}, args.results_root, args.warmup)
+    if args.engine == "hf":
+        from bench.engines.hf import MODEL, HFEngine
+        engine, config = HFEngine(), {"model": MODEL, "dtype": "bfloat16", "attn": "sdpa", "batch": 1}
+    else:
+        from bench.engines.fake import FakeEngine
+        engine, config = FakeEngine(a=args.a, b=args.b), {"a": args.a, "b": args.b}
+    run_dir = run(engine, args.trace, args.engine, config, args.results_root, args.warmup)
     print(run_dir)
 
 
