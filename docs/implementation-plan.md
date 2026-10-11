@@ -35,9 +35,12 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - 2 warmup requests (negative ids, output capped at 8) run before t0 and aren't recorded. Every run drains fully. Contract violations raise.
   - Output: `requests.jsonl` (with `output_ids`, for comparing engines token by token later), `steps.jsonl`, `env.json` (static env + `nvidia-smi` before/after, including the cumulative throttle counters), `run.json`. Folders are never overwritten.
   - Runner overhead between steps is 17–39 µs in a demo run (end of step k to start of step k+1; only a few samples so far). At 5 ms per fake decode step that is 0.3–0.8%, and it shows up in measured TPOT. M0.4 should measure it properly and set tolerances to match
-- [ ] **M0.3 Metrics** (`bench/metrics.py`)
-  - Write raw `requests.jsonl` first. Summaries come from the raw records.
-  - To decide: drop the warmup 10% by arrival order or by completion order? How to define "queue still growing" for the overload flag?
+- [x] **M0.3 Metrics** (`bench/metrics.py`). Formula gate: `tests/test_metrics.py` (8 pass, exact answers on simulated FIFO timelines). The real-clock gate is M0.4
+  - Write raw `requests.jsonl` first. Summaries come from the raw records and go to `summary.json`, which can be regenerated.
+  - Decided: drop the first 10% **by arrival** (under overload, completion order favours short requests).
+  - Decided: rates come from the kept requests' spans. Offered = (k−1)/arrival span, achieved = (k−1)/finish span. This is unbiased when the engine keeps up (finishes ≈ arrivals + S), and on a burst trace it gives capacity 1/S directly.
+  - Decided: overload = achieved < 0.95 × offered, OR the least-squares slope of `waiting` over the second half of the kept arrival window > 0.05 × offered. Null for burst traces. Both tolerances are recorded in `summary.json`.
+  - Output throughput = all tokens with timestamps inside the kept finish window ÷ window length. Goodput uses strict `<` against the SLO (TTFT 2 s, TPOT 100 ms).
 - [ ] **M0.4 Harness self-test** (`tests/test_harness.py`)
   - TPOT ≈ b, TTFT ≈ a·P, mean inter-arrival time ≈ 1/λ.
   - Overload flag set at ρ = 1.2, not set at ρ = 0.4. Tolerances based on measured sleep jitter.
