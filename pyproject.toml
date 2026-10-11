@@ -32,3 +32,5 @@ package = false
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+markers = ["slow: real-time harness runs taking seconds each (run with -m slow)"]
+addopts = "-m 'not slow'"

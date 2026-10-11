@@ -34,16 +34,22 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - Queue depth is counted by scheduled arrival, from the runner side (the protocol stays unchanged): `outstanding` = arrived − finished, `waiting` = arrived − has a first token.
   - 2 warmup requests (negative ids, output capped at 8) run before t0 and aren't recorded. Every run drains fully. Contract violations raise.
   - Output: `requests.jsonl` (with `output_ids`, for comparing engines token by token later), `steps.jsonl`, `env.json` (static env + `nvidia-smi` before/after, including the cumulative throttle counters), `run.json`. Folders are never overwritten.
-  - Runner overhead between steps is 17–39 µs in a demo run (end of step k to start of step k+1; only a few samples so far). At 5 ms per fake decode step that is 0.3–0.8%, and it shows up in measured TPOT. M0.4 should measure it properly and set tolerances to match
+  - Runner overhead between steps (end of step k to start of step k+1): median 2.3–2.5 µs over thousands of steps in M0.4. The 17–39 µs seen in an early demo came from its first few steps
 - [x] **M0.3 Metrics** (`bench/metrics.py`). Formula gate: `tests/test_metrics.py` (8 pass, exact answers on simulated FIFO timelines). The real-clock gate is M0.4
   - Write raw `requests.jsonl` first. Summaries come from the raw records and go to `summary.json`, which can be regenerated.
   - Decided: drop the first 10% **by arrival** (under overload, completion order favours short requests).
   - Decided: rates come from the kept requests' spans. Offered = (k−1)/arrival span, achieved = (k−1)/finish span. This is unbiased when the engine keeps up (finishes ≈ arrivals + S), and on a burst trace it gives capacity 1/S directly.
   - Decided: overload = achieved < 0.95 × offered, OR the least-squares slope of `waiting` over the second half of the kept arrival window > 0.05 × offered. Null for burst traces. Both tolerances are recorded in `summary.json`.
   - Output throughput = all tokens with timestamps inside the kept finish window ÷ window length. Goodput uses strict `<` against the SLO (TTFT 2 s, TPOT 100 ms).
-- [ ] **M0.4 Harness self-test** (`tests/test_harness.py`)
+- [x] **M0.4 Harness self-test** (`tests/test_harness.py`, run with `pytest -m slow`, about 33 s). Gate passes, stable over 3 runs
   - TPOT ≈ b, TTFT ≈ a·P, mean inter-arrival time ≈ 1/λ.
   - Overload flag set at ρ = 1.2, not set at ρ = 0.4. Tolerances based on measured sleep jitter.
+  - Fake timings scaled 10× down (a = 10 µs/token, b = 1 ms, P = 300, n = 21 → S = 23 ms, capacity 43.5 req/s), so runs take seconds.
+  - Unloaded (50 ms gaps): TTFT 3.039–3.047 ms (a·P = 3.0). TPOT 1.0123–1.0165 ms (b = 1.0); the excess is runner overhead + spin overshoot + preemption (TPOT p99 1.10–1.13 ms). Tolerance overhead + 50 µs.
+  - Burst (150 requests): 42.98–43.22 req/s vs 1/S = 43.48 (−0.6 to −1.2%, from about 3 µs per-step overshoot × 21 steps).
+  - ρ = 0.4 (250 Poisson requests, seed 42): achieved = offered = 17.76, queue slope ≈ 0.005 req/s against a 0.89 threshold, so no flag. ρ = 1.2 (150 requests): offered 58.5 (realized Poisson; nominal 52.2), achieved 41.7–43.2 ≈ capacity, slope 10–12 req/s, both conditions fire.
+  - `bench/trace.py` started with `poisson_arrivals` and `write_trace`. Mean gap within 4 SE of 1/λ at n = 20,000.
+  - The default `pytest` skips slow tests (`addopts = -m 'not slow'`). Rerun `-m slow` after any change to the runner, metrics, or fake engine
 - [ ] **M0.5 Traces** (`bench/trace.py`)
   - ShareGPT V3, Qwen tokenizer, filters (prompt ≤ 1024, output 4–512, total ≤ 2048). One fixed sample → several rates plus a burst trace, with a sidecar file.
   - Open question: HF has S ≈ 4–6 s, so 0.3× capacity is about 0.06 req/s, and 200 requests would take about 55 min. Choose n per rate and possibly cap `output_len`. Record the choice in the design log.
