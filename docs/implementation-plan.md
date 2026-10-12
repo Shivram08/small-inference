@@ -68,10 +68,19 @@ Every milestone runs through the same loop: concept discussion with real numbers
     - M = 192: a step from 92 to 139 µs (tile/wave quantization). M = 256–512: 14.3–15.8 TFLOP/s, 77–85% of peak (K = 896 is a short reduction).
   - Launch overhead: per-launch µs × profiled kernel count per decode step. Estimated about 850 launches and 5 ms. **Measured 11.3 µs per eager launch** (`x.add_`, spread 0.9) × **1006 kernels per HF decode step** (prompt 128, batch 1; about 42 per layer) = **11.4 ms**.
   - HF decode step wall time: **25.4–30.7 ms** (run medians), versus the 6.3 ms bandwidth bound (988 MB of weights / 156 GB/s → **158 tok/s**). HF batch 1 runs at about 25% of the bound and is CPU-bound: launch overhead alone is about 1.8× the GPU time, and the rest is Python module overhead. S estimate for M0.7: 230 tokens × ~26 ms ≈ 6 s
-- [ ] **M0.7 HF baseline** (`bench/engines/hf.py`)
+- [x] **M0.7 HF baseline** (`bench/engines/hf.py`, `bench/baseline.py`). Gate: `tests/test_hf_engine.py` (4 pass, token-identical to greedy `generate()`). Campaign `results/20261011-163739_hf_baseline/manifest.json`, 12 runs at 3fe4be1, all clean, 16:37–20:46
   - Manual prefill/decode loop, `.item()` before taking the timestamp.
   - Burst trace → S → 0.3×, 0.7×, 1.2× capacity, each run 3 times, each with `env.json`.
-- [ ] Design log: measured BW, peak, launch overhead, S, chosen rates
+  - Rep-1 burst: capacity 0.1469 req/s (S = 6.81 s) → rates 0.0441 / 0.103 / 0.176. Over 3 reps, burst capacity was 0.139–0.169.
+  - Results (mean over 3 reps): 0.3× TTFT p50 0.20 s, p99 7.9 s, goodput 0.82; 0.7× TTFT p50 1.75 s, goodput 0.51; 1.2× TTFT p50 31 s, goodput 0.06, overload flagged in all 3 reps. TPOT p50 24–28 ms everywhere (bound: 6.3 ms).
+  - Low-load reps are repeatable (achieved rate within 0.1%, TPOT p50 within 1–2 ms). 1.2× drifted slower over the evening: TPOT p50 25.0 → 28.2 → 31.2 ms. CPU-bound timing; no CPU telemetry yet.
+  - The generation_config defaults (sampling, repetition_penalty 1.1) don't apply to the raw argmax. In the reference test, `generate(eos_token_id=None)` still stops at the model's EOS, so the test points EOS at an untrained padded-vocab id.
+- [x] Design log: measured BW, peak, launch overhead, S, chosen rates
+- [ ] Measurement follow-ups before the next campaign. Each one is a measurement change, so results before and after are not comparable:
+  - Record CPU clock and temperature (sampled from the Windows side) in `env.json`.
+  - Sample GPU throttle counters during the run and detect resets. The counters go backwards when the dGPU powers off during idle gaps, so before-and-after differences are unreliable at low rates.
+  - Randomize run order per repetition, and cool down to a temperature baseline instead of a fixed 30 s.
+  - `torch.profiler` with CPU activity on one HF decode step, to break the 23–31 ms down by op (estimated: 6.3 ms GPU, 11.4 ms launches, the rest Python).
 
 ## Phase 1: Forward pass and contiguous KV cache
 

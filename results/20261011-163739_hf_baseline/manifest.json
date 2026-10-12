@@ -1,0 +1,113 @@
+{
+  "n": 100,
+  "seed": 0,
+  "fractions": [
+    0.3,
+    0.7,
+    1.2
+  ],
+  "runs": [
+    {
+      "rep": 1,
+      "trace": "sharegpt_n100_seed0_burst.jsonl",
+      "run_dir": "results/20261011-163739_hf_sharegpt_n100_seed0_burst",
+      "wall_s": 687.9962582588196,
+      "achieved_rate_req_s": 0.146918171517441,
+      "overload": null
+    },
+    {
+      "rep": 1,
+      "trace": "sharegpt_n100_seed0_rate0.0441.jsonl",
+      "run_dir": "results/20261011-164942_hf_sharegpt_n100_seed0_rate0.0441",
+      "wall_s": 2410.5848507881165,
+      "achieved_rate_req_s": 0.04275001468893062,
+      "overload": false
+    },
+    {
+      "rep": 1,
+      "trace": "sharegpt_n100_seed0_rate0.103.jsonl",
+      "run_dir": "results/20261011-173023_hf_sharegpt_n100_seed0_rate0.103",
+      "wall_s": 1038.7179596424103,
+      "achieved_rate_req_s": 0.10081041246825932,
+      "overload": false
+    },
+    {
+      "rep": 1,
+      "trace": "sharegpt_n100_seed0_rate0.176.jsonl",
+      "run_dir": "results/20261011-174813_hf_sharegpt_n100_seed0_rate0.176",
+      "wall_s": 688.2330951690674,
+      "achieved_rate_req_s": 0.15443145343347234,
+      "overload": true
+    },
+    {
+      "rep": 2,
+      "trace": "sharegpt_n100_seed0_burst.jsonl",
+      "run_dir": "results/20261011-180012_hf_sharegpt_n100_seed0_burst",
+      "wall_s": 725.5540730953217,
+      "achieved_rate_req_s": 0.13863788981919714,
+      "overload": null
+    },
+    {
+      "rep": 2,
+      "trace": "sharegpt_n100_seed0_rate0.0441.jsonl",
+      "run_dir": "results/20261011-181248_hf_sharegpt_n100_seed0_rate0.0441",
+      "wall_s": 2410.462346315384,
+      "achieved_rate_req_s": 0.04276539145633112,
+      "overload": false
+    },
+    {
+      "rep": 2,
+      "trace": "sharegpt_n100_seed0_rate0.103.jsonl",
+      "run_dir": "results/20261011-185329_hf_sharegpt_n100_seed0_rate0.103",
+      "wall_s": 1039.994596004486,
+      "achieved_rate_req_s": 0.10057295079419525,
+      "overload": false
+    },
+    {
+      "rep": 2,
+      "trace": "sharegpt_n100_seed0_rate0.176.jsonl",
+      "run_dir": "results/20261011-191120_hf_sharegpt_n100_seed0_rate0.176",
+      "wall_s": 717.9455649852753,
+      "achieved_rate_req_s": 0.1489127795823073,
+      "overload": true
+    },
+    {
+      "rep": 3,
+      "trace": "sharegpt_n100_seed0_burst.jsonl",
+      "run_dir": "results/20261011-192348_hf_sharegpt_n100_seed0_burst",
+      "wall_s": 620.391348361969,
+      "achieved_rate_req_s": 0.16910587597101423,
+      "overload": null
+    },
+    {
+      "rep": 3,
+      "trace": "sharegpt_n100_seed0_rate0.0441.jsonl",
+      "run_dir": "results/20261011-193439_hf_sharegpt_n100_seed0_rate0.0441",
+      "wall_s": 2414.6092121601105,
+      "achieved_rate_req_s": 0.042719900289647464,
+      "overload": false
+    },
+    {
+      "rep": 3,
+      "trace": "sharegpt_n100_seed0_rate0.103.jsonl",
+      "run_dir": "results/20261011-201525_hf_sharegpt_n100_seed0_rate0.103",
+      "wall_s": 1051.109057188034,
+      "achieved_rate_req_s": 0.10074834097881656,
+      "overload": false
+    },
+    {
+      "rep": 3,
+      "trace": "sharegpt_n100_seed0_rate0.176.jsonl",
+      "run_dir": "results/20261011-203327_hf_sharegpt_n100_seed0_rate0.176",
+      "wall_s": 753.7958166599274,
+      "achieved_rate_req_s": 0.14268275417950146,
+      "overload": true
+    }
+  ],
+  "capacity_req_s": 0.146918171517441,
+  "rates_req_s": [
+    0.0441,
+    0.103,
+    0.176
+  ]
+}

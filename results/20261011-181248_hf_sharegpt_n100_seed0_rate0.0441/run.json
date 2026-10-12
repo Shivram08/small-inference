@@ -1,0 +1,14 @@
+{
+  "engine": "hf",
+  "engine_config": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dtype": "bfloat16",
+    "attn": "sdpa",
+    "batch": 1
+  },
+  "trace": "traces/sharegpt_n100_seed0_rate0.0441.jsonl",
+  "n_requests": 100,
+  "warmup_requests": 2,
+  "wall_start_unix": 1791756769.1406188,
+  "wall_end_unix": 1791759178.6631267
+}
