@@ -9,7 +9,9 @@ Every milestone runs through the same loop: concept discussion with real numbers
 ## Step 0: Environment
 
 - [x] `git init -b main`, `.gitignore` (weights, venvs, profiler output; `traces/` and `results/` tracked), `.gitattributes` (LF everywhere)
-- [x] git identity (Shivram08) + first commit (8ec1175). GitHub auth exists on Windows only; set up gh in WSL before the first push
+- [x] git identity (Shivram08) + first commit (8ec1175)
+- [x] GitHub: private repo https://github.com/Shivram08/small-inference, `main` tracks `origin/main`. Pushing from WSL fails on large uploads (`curl 55 … GnuTLS recv error`, likely the WSL2 virtual-network MTU), so push from Windows git, using the Windows `gh` login:
+  `git -c safe.directory=* -c "credential.https://github.com.helper=" -c "credential.https://github.com.helper=!gh auth git-credential" -C \\wsl.localhost\Ubuntu-24.04\home\nekka\Small_Inference push`
 - [x] Repo moved to WSL ext4 at `~/Small_Inference` (checksums verified, CRLF converted to LF). `E:\Small_Inference` is the stale original, to delete once we've confirmed the move
 - [x] Ubuntu 24.04 installed in WSL2 and set as the default distro
 - [x] GPU access inside WSL: `nvidia-smi` and `nvidia-smi -q -d PERFORMANCE` work. Vivobook Pro 15 N6506MJ (Optimus: display on the Intel Arc iGPU, dGPU at 0 MiB used, so all 6 GB is ours). The NVML failure earlier was transient (dGPU idle-powered-off), not a setting. Power limit 75 W when plugged in with Best performance + fan Performance (60 W default + about 15 W Dynamic Boost; 30 W in Balanced mode). Every "Clocks Event Reasons" field is readable in WSL
