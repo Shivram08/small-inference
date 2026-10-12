@@ -1,0 +1,199 @@
+{
+  "manifest": "results/20261011-163739_hf_baseline/manifest.json",
+  "capacity_req_s": 0.146918171517441,
+  "runs": [
+    {
+      "trace": "burst",
+      "rep": 1,
+      "dir": "results/20261011-163739_hf_sharegpt_n100_seed0_burst",
+      "mean_wait_s": 357.1169748439446,
+      "mean_prefill_ms": 33.22483051110289,
+      "wait_share_of_ttft": 0.9999069723871318
+    },
+    {
+      "trace": "rate0.0441",
+      "rep": 1,
+      "dir": "results/20261011-164942_hf_sharegpt_n100_seed0_rate0.0441",
+      "mean_wait_s": 0.847425574735933,
+      "mean_prefill_ms": 145.58975031119795,
+      "wait_share_of_ttft": 0.8533861999518608,
+      "mg1": {
+        "lambda": 0.04271996634267748,
+        "mean_S": 5.789746539688945,
+        "cv_S": 0.5891887071379047,
+        "rho": 0.24733777730814516,
+        "predicted_wait_s": 1.2815445180727136,
+        "measured_wait_s": 0.847425574735933
+      }
+    },
+    {
+      "trace": "rate0.103",
+      "rep": 1,
+      "dir": "results/20261011-173023_hf_sharegpt_n100_seed0_rate0.103",
+      "mean_wait_s": 3.566846682222984,
+      "mean_prefill_ms": 78.86343952223898,
+      "wait_share_of_ttft": 0.9783681541075222,
+      "mg1": {
+        "lambda": 0.09977679213822631,
+        "mean_S": 5.864813073455581,
+        "cv_S": 0.6175201866844259,
+        "rho": 0.5851722349597297,
+        "predicted_wait_s": 5.71396912361964,
+        "measured_wait_s": 3.566846682222984
+      }
+    },
+    {
+      "trace": "rate0.176",
+      "rep": 1,
+      "dir": "results/20261011-174813_hf_sharegpt_n100_seed0_rate0.176",
+      "mean_wait_s": 21.567976192682327,
+      "mean_prefill_ms": 36.55188148877642,
+      "wait_share_of_ttft": 0.9983081379346362,
+      "mg1": {
+        "lambda": 0.17049238268279437,
+        "mean_S": 5.97206492964437,
+        "cv_S": 0.6234307538541701,
+        "rho": 1.0181915793914234,
+        "predicted_wait_s": null,
+        "measured_wait_s": 21.567976192682327
+      }
+    },
+    {
+      "trace": "burst",
+      "rep": 2,
+      "dir": "results/20261011-180012_hf_sharegpt_n100_seed0_burst",
+      "mean_wait_s": 373.27244707736617,
+      "mean_prefill_ms": 34.93339488888726,
+      "wait_share_of_ttft": 0.9999064219013171
+    },
+    {
+      "trace": "rate0.0441",
+      "rep": 2,
+      "dir": "results/20261011-181248_hf_sharegpt_n100_seed0_rate0.0441",
+      "mean_wait_s": 0.9201426931031531,
+      "mean_prefill_ms": 144.0719356777562,
+      "wait_share_of_ttft": 0.8646213538308574,
+      "mg1": {
+        "lambda": 0.04271996634267748,
+        "mean_S": 5.957852752633315,
+        "cv_S": 0.5927506251333811,
+        "rho": 0.2545192690671236,
+        "predicted_wait_s": 1.37439929114995,
+        "measured_wait_s": 0.9201426931031531
+      }
+    },
+    {
+      "trace": "rate0.103",
+      "rep": 2,
+      "dir": "results/20261011-185329_hf_sharegpt_n100_seed0_rate0.103",
+      "mean_wait_s": 3.258810050243964,
+      "mean_prefill_ms": 77.72888428882854,
+      "wait_share_of_ttft": 0.9767037382707141,
+      "mg1": {
+        "lambda": 0.09977679213822631,
+        "mean_S": 5.6502993835888145,
+        "cv_S": 0.5791695733821526,
+        "rho": 0.5637687471150894,
+        "predicted_wait_s": 4.8758374360028025,
+        "measured_wait_s": 3.258810050243964
+      }
+    },
+    {
+      "trace": "rate0.176",
+      "rep": 2,
+      "dir": "results/20261011-191120_hf_sharegpt_n100_seed0_rate0.176",
+      "mean_wait_s": 37.10888929333722,
+      "mean_prefill_ms": 36.30593667783412,
+      "wait_share_of_ttft": 0.9990225940003002,
+      "mg1": {
+        "lambda": 0.17049238268279437,
+        "mean_S": 6.532132286144466,
+        "cv_S": 0.6150852198268112,
+        "rho": 1.1136787974639788,
+        "predicted_wait_s": null,
+        "measured_wait_s": 37.10888929333722
+      }
+    },
+    {
+      "trace": "burst",
+      "rep": 3,
+      "dir": "results/20261011-192348_hf_sharegpt_n100_seed0_burst",
+      "mean_wait_s": 335.2510003970105,
+      "mean_prefill_ms": 28.596746666597834,
+      "wait_share_of_ttft": 0.9999147077635795
+    },
+    {
+      "trace": "rate0.0441",
+      "rep": 3,
+      "dir": "results/20261011-193439_hf_sharegpt_n100_seed0_rate0.0441",
+      "mean_wait_s": 1.1444980135255984,
+      "mean_prefill_ms": 151.02576454444514,
+      "wait_share_of_ttft": 0.8834249381594292,
+      "mg1": {
+        "lambda": 0.04271996634267748,
+        "mean_S": 6.210173160677914,
+        "cv_S": 0.6290720797810224,
+        "rho": 0.2652983884063595,
+        "predicted_wait_s": 1.5649456895032778,
+        "measured_wait_s": 1.1444980135255984
+      }
+    },
+    {
+      "trace": "rate0.103",
+      "rep": 3,
+      "dir": "results/20261011-201525_hf_sharegpt_n100_seed0_rate0.103",
+      "mean_wait_s": 5.0838183661216805,
+      "mean_prefill_ms": 70.19998013319207,
+      "wait_share_of_ttft": 0.9863795633975183,
+      "mg1": {
+        "lambda": 0.09977679213822631,
+        "mean_S": 6.055599129999973,
+        "cv_S": 0.5875465809611043,
+        "rho": 0.6042082556664314,
+        "predicted_wait_s": 6.2178100588342105,
+        "measured_wait_s": 5.0838183661216805
+      }
+    },
+    {
+      "trace": "rate0.176",
+      "rep": 3,
+      "dir": "results/20261011-203327_hf_sharegpt_n100_seed0_rate0.176",
+      "mean_wait_s": 50.59440396813834,
+      "mean_prefill_ms": 33.227964600114824,
+      "wait_share_of_ttft": 0.9993436792650254,
+      "mg1": {
+        "lambda": 0.17049238268279437,
+        "mean_S": 6.966235866033215,
+        "cv_S": 0.6086845764846002,
+        "rho": 1.1876901511303424,
+        "predicted_wait_s": null,
+        "measured_wait_s": 50.59440396813834
+      }
+    }
+  ],
+  "prefill_fit_burst_ms": {
+    "intercept": 25.32660993990078,
+    "per_prompt_token": 0.06353249719933861,
+    "prompt_len_range": [
+      30,
+      927
+    ]
+  },
+  "prefill_extra_vs_burst_same_request": {
+    "rate0.0441": {
+      "median_extra_ms": 153.50899450049837,
+      "mean_extra_ms": 114.15994926005017,
+      "frac_over_50ms": 0.6233333333333333
+    },
+    "rate0.103": {
+      "median_extra_ms": 2.154885000891227,
+      "mean_extra_ms": 43.48752096997183,
+      "frac_over_50ms": 0.27
+    },
+    "rate0.176": {
+      "median_extra_ms": 0.14748500052519375,
+      "mean_extra_ms": 6.571530823357534,
+      "frac_over_50ms": 0.04
+    }
+  }
+}
