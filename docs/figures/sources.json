@@ -26,11 +26,11 @@
   "phase5_table": {
     "kind": "kv_quant_table",
     "results": [
-      "results/kv_quant/20261019-185822_Qwen2.5-0.5B-Instruct/results.json",
-      "results/kv_quant/20261019-185928_Qwen2.5-1.5B-Instruct/results.json"
+      "results/kv_quant/20261019-192223_Qwen2.5-0.5B-Instruct/results.json",
+      "results/kv_quant/20261019-192253_Qwen2.5-1.5B-Instruct/results.json"
     ],
     "out": "docs/figures/phase5",
-    "pending": "INT8 kernel timing to be redone after the kernel fix"
+    "note": "fixed kernel (cfde332), timing median of 3; superseded first-kernel runs: 20261019-1858*, -1859*"
   },
   "phase5_rates": {
     "kind": "rates",
