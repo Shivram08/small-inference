@@ -65,8 +65,9 @@ def measure(S: int, batch: int, B: int, calls: int, reps: int, seed: int = 0) ->
     return rows
 
 
-def plot(results_path: Path) -> list[Path]:
-    """Draw bandwidth.png (small multiples by block size and mode) and split_k.png from a results.json."""
+def plot(results_path: Path, out_dir: Path | None = None) -> list[Path]:
+    """Draw bandwidth.png (small multiples by block size and mode) and split_k.png from a results.json, into out_dir
+    (default: next to the results)."""
     import matplotlib
     import matplotlib.ticker
     matplotlib.use("Agg")
@@ -75,7 +76,8 @@ def plot(results_path: Path) -> list[Path]:
     from bench.plots import GRID, INK, INK2, SURFACE, style_axes
 
     rows = json.loads(results_path.read_text())["rows"]
-    out_dir = results_path.parent
+    out_dir = Path(out_dir or results_path.parent)
+    out_dir.mkdir(parents=True, exist_ok=True)
     series = {1: "#2a78d6", 8: "#eb6834", 32: "#1baf7a"}  # reference palette slots 1-3, by batch
     blocks = sorted({r["block_size"] for r in rows})
     fig, axes = plt.subplots(2, len(blocks), figsize=(4 * len(blocks), 6.4), dpi=150, facecolor=SURFACE,

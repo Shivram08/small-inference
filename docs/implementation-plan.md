@@ -137,11 +137,9 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 6: Benchmark vs. vLLM and write-up
 
-- [ ] Separate vLLM venv, memory-matched configs (eager and CUDA graphs)
-- [ ] One script that rebuilds every plot from raw logs
-- [ ] README with design, results, and limitations. Go through Heiser's checklist first
-
----
+- [~] Separate vLLM venv, memory-matched configs (eager and CUDA graphs). Adapter written against vLLM's public API (`bench/engines/vllm_engine.py`: greedy, `ignore_eos`, `min_tokens = max_tokens`, no prefix caching, the same 64-sequence / 512-token limits; engines `vllm`, `vllm-eager`; `VLLM_GPU_MEMORY_UTILIZATION` to match the 1.5 GiB pool; records vLLM's block count). Test: `tests/test_vllm_engine.py` (skipped outside the vLLM venv). Pending: items 13–15 in `docs/deferred-runs.md`
+- [x] One script that rebuilds every plot from raw logs: `bench/make_figures.py` over `docs/figures/sources.json` (Phase 0 figures regenerate byte-identical; the Phase 5 0.5B table regenerates; other groups pending their runs)
+- [ ] README with design, results, and limitations. Go through Heiser's checklist first. Written after the deferred measurements (item 16)
 
 ## Early decisions
 

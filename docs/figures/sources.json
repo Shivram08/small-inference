@@ -1,0 +1,46 @@
+{
+  "_doc": "Which raw results feed which figure. bench/make_figures.py regenerates every entry; empty sources are reported as pending. Add a result folder here when its deferred run (docs/deferred-runs.md) is done.",
+  "phase0": {
+    "kind": "phase0",
+    "manifest": "results/20261011-163739_hf_baseline/manifest.json",
+    "out": "docs/figures/phase0"
+  },
+  "phase1_vs_hf": {
+    "kind": "rates",
+    "manifests": [],
+    "out": "docs/figures/phase1",
+    "pending": "deferred item 5"
+  },
+  "phase3_decode_sweep": {
+    "kind": "decode_sweep",
+    "results": null,
+    "out": "docs/figures/phase3",
+    "pending": "deferred item 4c"
+  },
+  "phase4_rates": {
+    "kind": "rates",
+    "manifests": [],
+    "out": "docs/figures/phase4",
+    "pending": "deferred items 6-7"
+  },
+  "phase5_table": {
+    "kind": "kv_quant_table",
+    "results": [
+      "results/kv_quant/20261019-142247_Qwen2.5-0.5B-Instruct/results.json"
+    ],
+    "out": "docs/figures/phase5",
+    "pending": "1.5B and timing: deferred items 9-10"
+  },
+  "phase5_rates": {
+    "kind": "rates",
+    "manifests": [],
+    "out": "docs/figures/phase5",
+    "pending": "deferred item 11"
+  },
+  "phase6_vs_vllm": {
+    "kind": "rates",
+    "manifests": [],
+    "out": "docs/figures/phase6",
+    "pending": "deferred items 13-15"
+  }
+}

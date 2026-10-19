@@ -23,8 +23,9 @@ def _model(model_id: str | None = None):
 
 def load_engine(name: str, model_id: str | None = None, kv_bytes: int = CONTINUOUS_KV_BYTES,
                 **fake_timing: float) -> tuple[object, dict]:
-    """(engine, config recorded in run.json) for "fake", "hf", "contiguous", or a continuous variant (CONTINUOUS).
-    model_id and kv_bytes apply to the continuous engines; hf and contiguous are the 0.5B baselines."""
+    """(engine, config recorded in run.json) for "fake", "hf", "contiguous", a continuous variant (CONTINUOUS), or
+    "vllm" / "vllm-eager" (vLLM venv only). model_id and kv_bytes apply to the continuous and vLLM engines; hf and
+    contiguous are the 0.5B baselines."""
     from engine.loader import DEFAULT_MODEL
     if name in ("hf", "contiguous") and model_id not in (None, DEFAULT_MODEL):
         raise ValueError(f"{name} runs only the default model {DEFAULT_MODEL}")
@@ -47,6 +48,13 @@ def load_engine(name: str, model_id: str | None = None, kv_bytes: int = CONTINUO
         return eng, {"model": model_id or DEFAULT_MODEL, "dtype": "bfloat16", "kv": "paged", "kv_format": fmt,
                      "kv_bytes": kv_bytes, "block_size": 16, "num_blocks": eng.manager.num_blocks,
                      "attn": "triton decode + gather prefill", "scheduler": asdict(sched)}
+    if name in ("vllm", "vllm-eager"):  # only in the vLLM venv
+        import os
+
+        from bench.engines.vllm_engine import VLLMEngine
+        util = float(os.environ.get("VLLM_GPU_MEMORY_UTILIZATION", "0.6"))  # tune to match kv_bytes; see adapter
+        eng = VLLMEngine(model_id or DEFAULT_MODEL, enforce_eager=name == "vllm-eager", gpu_memory_utilization=util)
+        return eng, eng.config() | {"target_kv_bytes": kv_bytes}
     if name == "fake":
         from bench.engines.fake import FakeEngine
         return FakeEngine(**fake_timing), dict(fake_timing)

@@ -53,10 +53,12 @@ bench/
   decode_sweep.py  # Triton decode kernel: bandwidth vs context x batch x block size, split-K
   rate_plots.py    # throughput, p99 TPOT, p99 ITL vs offered rate from campaign manifests
   kv_quant_eval.py # Phase 5 three-config table: chunked-prefill quality, capacity, kernel timing
+  make_figures.py  # rebuild every figure/table from raw logs (docs/figures/sources.json)
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter
     fake.py        # synthetic-timing engine for testing the harness
+    vllm_engine.py # vLLM adapter (Phase 6, vLLM venv only)
 tests/             # correctness tests for every component
 traces/            # generated .jsonl traces (committed, never edited)
 results/           # one folder per run (generated, never edited by hand)
