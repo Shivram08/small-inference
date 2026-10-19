@@ -1,0 +1,131 @@
+{
+  "args": {
+    "contexts": "128,512,1024,2048,4096",
+    "batches": "1,8",
+    "block_size": 16,
+    "reps": 50,
+    "results_root": "results/paged_gather"
+  },
+  "rows": [
+    {
+      "context_len": 128,
+      "batch": 1,
+      "block_size": 16,
+      "kv_bytes_per_layer": 65536,
+      "contiguous_us": 164.35199975967407,
+      "paged_us": 209.4080001115799,
+      "gather_us": 53.247999399900436,
+      "paged_over_contiguous": 1.2741433047227266,
+      "gather_gb_s": 2.461538489279751,
+      "paged_step_overhead_ms_24_layers": 1.0813440084457397
+    },
+    {
+      "context_len": 512,
+      "batch": 1,
+      "block_size": 16,
+      "kv_bytes_per_layer": 262144,
+      "contiguous_us": 158.720001578331,
+      "paged_us": 220.67199647426605,
+      "gather_us": 52.22399905323982,
+      "paged_over_contiguous": 1.3903225446060792,
+      "gather_gb_s": 10.039215868273779,
+      "paged_step_overhead_ms_24_layers": 1.4868478775024414
+    },
+    {
+      "context_len": 1024,
+      "batch": 1,
+      "block_size": 16,
+      "kv_bytes_per_layer": 524288,
+      "contiguous_us": 160.25599837303162,
+      "paged_us": 203.77600193023682,
+      "gather_us": 57.8560009598732,
+      "paged_over_contiguous": 1.271565520161702,
+      "gather_gb_s": 18.123893504621133,
+      "paged_step_overhead_ms_24_layers": 1.0444800853729248
+    },
+    {
+      "context_len": 2048,
+      "batch": 1,
+      "block_size": 16,
+      "kv_bytes_per_layer": 1048576,
+      "contiguous_us": 193.02400201559067,
+      "paged_us": 236.03200167417526,
+      "gather_us": 157.69599378108978,
+      "paged_over_contiguous": 1.2228116669921227,
+      "gather_gb_s": 13.29870182314981,
+      "paged_step_overhead_ms_24_layers": 1.0321919918060303
+    },
+    {
+      "context_len": 4096,
+      "batch": 1,
+      "block_size": 16,
+      "kv_bytes_per_layer": 2097152,
+      "contiguous_us": 164.35199975967407,
+      "paged_us": 231.9360002875328,
+      "gather_us": 76.80000364780426,
+      "paged_over_contiguous": 1.41121495708409,
+      "gather_gb_s": 54.61333073933932,
+      "paged_step_overhead_ms_24_layers": 1.6220160126686096
+    },
+    {
+      "context_len": 128,
+      "batch": 8,
+      "block_size": 16,
+      "kv_bytes_per_layer": 524288,
+      "contiguous_us": 1095.6799983978271,
+      "paged_us": 1502.2079944610596,
+      "gather_us": 324.6079981327057,
+      "paged_over_contiguous": 1.3710280343327281,
+      "gather_gb_s": 3.230283930254001,
+      "paged_step_overhead_ms_24_layers": 9.756671905517578
+    },
+    {
+      "context_len": 512,
+      "batch": 8,
+      "block_size": 16,
+      "kv_bytes_per_layer": 2097152,
+      "contiguous_us": 1084.4160318374634,
+      "paged_us": 1368.064045906067,
+      "gather_us": 754.1760206222534,
+      "paged_over_contiguous": 1.2615675218190778,
+      "gather_gb_s": 5.56143908757451,
+      "paged_step_overhead_ms_24_layers": 6.807552337646484
+    },
+    {
+      "context_len": 1024,
+      "batch": 8,
+      "block_size": 16,
+      "kv_bytes_per_layer": 4194304,
+      "contiguous_us": 2592.7679538726807,
+      "paged_us": 2204.6719789505005,
+      "gather_us": 326.6560137271881,
+      "paged_over_contiguous": 0.8503159627754185,
+      "gather_gb_s": 25.680249704528254,
+      "paged_step_overhead_ms_24_layers": -9.314303398132324
+    },
+    {
+      "context_len": 2048,
+      "batch": 8,
+      "block_size": 16,
+      "kv_bytes_per_layer": 8388608,
+      "contiguous_us": 2472.4481105804443,
+      "paged_us": 3409.4079732894897,
+      "gather_us": 771.5839743614197,
+      "paged_over_contiguous": 1.378960374820194,
+      "gather_gb_s": 21.7438626999546,
+      "paged_step_overhead_ms_24_layers": 22.48703670501709
+    },
+    {
+      "context_len": 4096,
+      "batch": 8,
+      "block_size": 16,
+      "kv_bytes_per_layer": 16777216,
+      "contiguous_us": 2392.064094543457,
+      "paged_us": 3345.4079627990723,
+      "gather_us": 846.3360071182251,
+      "paged_over_contiguous": 1.398544449720344,
+      "gather_gb_s": 39.646702630853284,
+      "paged_step_overhead_ms_24_layers": 22.880252838134766
+    }
+  ]
+}

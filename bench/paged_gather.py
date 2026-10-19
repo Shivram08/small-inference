@@ -5,7 +5,10 @@ so 512 * S bytes per layer (256 KiB at S = 512; across 24 layers, 6 MiB). Per co
   contiguous: attention() over [2, S, 64] views of a contiguous cache (reads K/V once)
   paged:      gather the sequence's 16-token blocks into contiguous [2, S, 64] copies, then the same attention()
   gather:     the gather alone (reads and writes K/V: 2 x 512 * S bytes per layer per sequence)
-Times are CUDA-event medians over --reps after warmup, per layer; x 24 for a whole decode step. Block tables are
+Two views per point: GPU kernel time (summed kernel durations from torch.profiler, median per call, immune to launch
+gaps) with the kernel count per call, and wall time (CUDA events around one call, launches included). The kernel
+view is the gather's GPU cost; the count times the per-launch cost (~12-20 µs here, varying with a WSL host state, see
+the design log) is its launch cost. Wall times are CUDA-event medians over --reps after warmup, per layer. Block tables are
 shuffled. Events time the GPU stream, which includes the gaps where the GPU waits for the CPU to launch the next
 kernel; at small S those gaps dominate (a few kernels at ~11 µs each), so small-S numbers measure launch cost, and only
 large S approaches a bandwidth measurement. Both matter: batch-1 decode is CPU-bound. The gap between paged and contiguous is what the Phase 3 kernel, which reads blocks in place, removes.
@@ -31,6 +34,32 @@ from engine.paged_cache import PagedKVCache, build_metadata
 QWEN_05B = ModelConfig(vocab_size=151936, hidden_size=896, intermediate_size=4864, num_layers=1, num_q_heads=14,
                        num_kv_heads=2, head_dim=64, rms_norm_eps=1e-6, rope_theta=1e6, max_position_embeddings=32768,
                        tie_word_embeddings=True)  # one layer: the benchmark times a single layer's attention
+
+
+def kernel_profile(fn, reps: int) -> tuple[float, float]:
+    """(median summed GPU kernel µs per call, kernels per call) from torch.profiler: immune to launch gaps."""
+    from torch.autograd import DeviceType
+    from torch.profiler import ProfilerActivity, profile, record_function
+    fn()
+    torch.cuda.synchronize()
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA]) as prof:
+        for _ in range(reps):
+            with record_function("call"):
+                fn()
+            torch.cuda.synchronize()
+    events = prof.events()
+    calls = sorted((e.time_range.start, e.time_range.end) for e in events
+                   if e.name == "call" and e.device_type == DeviceType.CPU)
+    per_call = [[0.0, 0] for _ in calls]
+    for e in events:
+        if e.device_type != DeviceType.CUDA or e.name == "call":
+            continue
+        for i, (a, b) in enumerate(calls):
+            if a <= e.time_range.start <= b:
+                per_call[i][0] += e.time_range.elapsed_us()
+                per_call[i][1] += 1
+                break
+    return statistics.median(x[0] for x in per_call), statistics.median(x[1] for x in per_call)
 
 
 def time_us(fn, reps: int, warmup: int = 5) -> float:
@@ -93,6 +122,9 @@ def measure(S: int, batch: int, block_size: int, reps: int, seed: int = 0) -> di
     r = {"context_len": S, "batch": batch, "block_size": block_size, "kv_bytes_per_layer": kv_bytes,
          "contiguous_us": time_us(run_contiguous, reps), "paged_us": time_us(run_paged, reps),
          "gather_us": time_us(run_gather, reps)}
+    for name, fn in (("contiguous", run_contiguous), ("paged", run_paged), ("gather", run_gather)):
+        r[f"{name}_kernel_us"], r[f"{name}_kernels"] = kernel_profile(fn, min(reps, 20))
+    r["paged_over_contiguous_kernel"] = r["paged_kernel_us"] / r["contiguous_kernel_us"]
     r["paged_over_contiguous"] = r["paged_us"] / r["contiguous_us"]
     r["gather_gb_s"] = 2 * kv_bytes / (r["gather_us"] * 1e3)  # read + write
     r["paged_step_overhead_ms_24_layers"] = 24 * (r["paged_us"] - r["contiguous_us"]) / 1e3
@@ -118,10 +150,10 @@ def main() -> None:
             for S in map(int, args.contexts.split(",")):
                 r = measure(S, batch, args.block_size, args.reps)
                 rows.append(r)
-                print(f"S={S:5d} batch={batch:2d}: contiguous {r['contiguous_us']:7.1f} µs, paged {r['paged_us']:7.1f} "
-                      f"µs ({r['paged_over_contiguous']:.2f}x), gather {r['gather_us']:7.1f} µs "
-                      f"({r['gather_gb_s']:.0f} GB/s); +{r['paged_step_overhead_ms_24_layers']:.2f} ms per 24-layer "
-                      f"step", flush=True)
+                print(f"S={S:5d} batch={batch:2d}: GPU kernel time contiguous {r['contiguous_kernel_us']:6.1f} µs "
+                      f"({r['contiguous_kernels']:.0f} kernels), paged {r['paged_kernel_us']:6.1f} µs "
+                      f"({r['paged_kernels']:.0f}), {r['paged_over_contiguous_kernel']:.2f}x; wall incl. launches "
+                      f"{r['contiguous_us']:7.1f} vs {r['paged_us']:7.1f} µs", flush=True)
     env["gpu_after"] = gpu_snapshot()
     (out_dir / "results.json").write_text(json.dumps({"args": vars(args) | {"results_root": str(args.results_root)},
                                                       "rows": rows}, indent=2))
