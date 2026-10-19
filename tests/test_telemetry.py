@@ -74,15 +74,17 @@ def test_cpu_summary_tracks_busiest_class():
 
 
 def test_rep_orders():
-    """Each repetition is a permutation of its traces; repetition 1 omits the burst; the seed fixes the order."""
+    """Each repetition is a permutation of the (engine, trace) pairs; repetition 1 omits what already ran; the seed
+    fixes the order; and positions really vary across repetitions."""
     burst, rates = Path("burst"), [Path("r1"), Path("r2"), Path("r3")]
-    orders = rep_orders(burst, rates, reps=3, seed=0)
-    assert sorted(orders[0]) == sorted(rates)
-    assert all(sorted(o) == sorted([burst, *rates]) for o in orders[1:])
-    assert orders == rep_orders(burst, rates, reps=3, seed=0)
-    many = rep_orders(burst, rates, reps=30, seed=1)
-    assert len({tuple(o) for o in many[1:]}) > 1  # actually shuffled
-    assert {o.index(burst) for o in many[1:]} == {0, 1, 2, 3}  # the burst is not always first
+    items = [(e, t) for e in ("hf", "contiguous") for t in [burst, *rates]]
+    orders = rep_orders(items, reps=3, seed=0, already_run=(("hf", burst),))
+    assert sorted(orders[0]) == sorted(x for x in items if x != ("hf", burst))
+    assert all(sorted(o) == sorted(items) for o in orders[1:])
+    assert orders == rep_orders(items, reps=3, seed=0, already_run=(("hf", burst),))
+    many = rep_orders(items, reps=30, seed=1)
+    assert len({tuple(o) for o in many}) > 1
+    assert {o.index(("hf", burst)) for o in many} == set(range(len(items)))  # not always first
 
 
 class FakeClock:

@@ -1,6 +1,6 @@
 # Implementation Plan
 
-A living document that we update as each milestone lands. Status: `[ ]` todo, `[~]` in progress, `[x]` done (its gating test passes).
+A living document that we update as each milestone lands. Long or heavy runs that are written but not yet run are queued in `docs/deferred-runs.md`. Status: `[ ]` todo, `[~]` in progress, `[x]` done (its gating test passes).
 
 Every milestone runs through the same loop: concept discussion with real numbers → interface design → implementation → gating test passes → measure with the harness → design-log entry → only then compare against nano-vllm or vLLM.
 
@@ -84,7 +84,7 @@ Every milestone runs through the same loop: concept discussion with real numbers
   - [x] Campaign order shuffled per repetition (`--order-seed`, default 0, orders saved in the manifest). Cooldown waits for the GPU to reach its idle temperature at campaign start + 3 °C (min 30 s, max 600 s), recorded per run in the manifest
   - [~] `bench/profile_decode.py` (`--engine hf|contiguous`): torch.profiler on batch-1 decode steps → wall, GPU busy (kernel-interval union), kernel and launch counts, launch API time, sync wait, remainder. Smoke-tested only, in **Balanced mode** (30 W GPU limit): step 47 ms unprofiled; 1008 kernels and 1006 launches per step; GPU busy 11.2 ms. Not a valid measurement (`results/profile/20261019-124857_hf`). Rerun in Best performance mode
   - [~] `bench/cpu_probe.py`: pure-Python fixed workload + CPU telemetry, no GPU, to test the P/E-core hypothesis. One 90 s run in Balanced mode with the laptop in use (`results/cpu_probe/20261019-124946`): chunk time is block-bimodal too (≈1.05 ms vs ≈1.8 ms, slow blocks up to 10 s), but the busiest core was a P-core in every sample, and slow windows had the busiest core at 2.2 GHz vs 3.4 GHz. Preliminary: points at P-core clock drops, not E-core migration. Rerun in Best performance mode with the laptop idle
-- [ ] Next HF campaign with the new measurement code (heavy: about 2.7 h; only when the laptop is free, plugged in, Best performance)
+- [ ] Next HF campaign with the new measurement code: merged into the HF + Phase 1 comparison campaign (`bench/baseline.py --engines hf,contiguous --rates ...`, which reuses the Phase 0 rate traces). Queued in `docs/deferred-runs.md`
 
 ## Phase 1: Forward pass and contiguous KV cache
 
@@ -92,11 +92,11 @@ Every milestone runs through the same loop: concept discussion with real numbers
 - [x] RMSNorm (computed in fp32, cast back before the weight multiply). Gate: bit-identical to `Qwen2RMSNorm` in fp32 and bf16
 - [x] RoPE with the `rotate_half` pairing. Gate: bit-identical to HF at positions up to 32,767 (fp32, bf16), plus relative-position and pairing property tests. Sign of rotate_half folded into the sin table; cos/sin gathered once per forward; q and k rotated together as one [T, 16, 64] view
 - [x] One decoder layer matching HF layer 0. Gate: bit-identical with `fused_matmuls = False`; 1.26e-5 fused (output magnitude 3)
-- [x] Full model (`engine/model.py`). **Gate (invariant 1):** with `fused_matmuls = False`, fp32 logits are **bit-identical** to HF eager on all three prompts (36, 247, 1 tokens). With fusion (the default), max |diff| 2.4e-4 at logit magnitude 30 (8e-6 relative), entirely from cuBLAS reduction order in the fused QKV / gate-up matmuls (confirmed: unfused → 0.0); argmax identical everywhere. Test bound: 5e-4 absolute and 2e-5 relative. bf16 argmax agreement with HF fp32 over 817 positions: 95.5%, same as HF bf16 eager (95.6%); HF bf16 SDPA gets 97.4%
+- [x] Full model (`engine/model.py`). **Gate (invariant 1), fused 2.4e-4 accepted (2026-10-19):** with `fused_matmuls = False`, fp32 logits are **bit-identical** to HF eager on all three prompts (36, 247, 1 tokens). With fusion (the default), max |diff| 2.4e-4 at logit magnitude 30 (8e-6 relative), entirely from cuBLAS reduction order in the fused QKV / gate-up matmuls (confirmed: unfused → 0.0); argmax identical everywhere. Test bound: 5e-4 absolute and 2e-5 relative. bf16 argmax agreement with HF fp32 over 817 positions: 95.5%, same as HF bf16 eager (95.6%); HF bf16 SDPA gets 97.4%
 - [x] Contiguous cache `[H_kv, T_max, d]` per layer (`engine/kv_cache.py`), keys after RoPE. The forward pass takes `positions` explicitly; with a cache they come from `cache.next_positions(n)` (device-side arange, no sync, no copy). Chunked prefill (64-token chunks) matches one-shot within 1.1e-4
 - [x] Generate (`engine/generate.py`). **Gate (invariant 2):** 50 greedy fp32 tokens identical cached vs uncached for the chat, 247-token, and 1-token prompts, and identical to HF's own cached greedy decode
 - [x] Engine (`engine/engine.py`, `ContiguousEngine`): batch-1 FIFO like the HF baseline, one preallocated 2,048-token cache reused per request. Gate: `tests/test_engine.py` (protocol, FIFO, equals `greedy_generate`). Runner: `--engine contiguous`
-- [~] Measure batch-1 TPOT in the harness against HF. Done so far: launches per decode step 1381 → **905** (HF: 1008) after removing a hidden K/V copy (broadcast `matmul` expanded K and V 7×) and per-layer RoPE table work. Pending (heavy, needs Best performance mode and an idle laptop): `bench.profile_decode` for both engines, then burst + 3-rate runs with `--engine contiguous` against the HF campaign
+- [~] Measure batch-1 TPOT in the harness against HF. Done so far: launches per decode step 1381 → **905** (HF: 1008) after removing a hidden K/V copy (broadcast `matmul` expanded K and V 7×) and per-layer RoPE table work. Pending: items 2, 3, and 5 in `docs/deferred-runs.md`
 
 ## Phase 2: Paged KV cache and block manager
 

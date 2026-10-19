@@ -190,18 +190,8 @@ def main() -> None:
     p.add_argument("--telemetry", action="store_true", help="sample GPU and host CPU during the replay")
     args = p.parse_args()
 
-    if args.engine == "hf":
-        from bench.engines.hf import MODEL, HFEngine
-        engine, config = HFEngine(), {"model": MODEL, "dtype": "bfloat16", "attn": "sdpa", "batch": 1}
-    elif args.engine == "contiguous":
-        from engine.engine import MAX_LEN, ContiguousEngine
-        from engine.loader import DEFAULT_MODEL
-        engine = ContiguousEngine()
-        config = {"model": DEFAULT_MODEL, "dtype": "bfloat16", "attn": "matmul-softmax", "kv": "contiguous",
-                  "max_len": MAX_LEN, "fused_matmuls": True, "batch": 1}
-    else:
-        from bench.engines.fake import FakeEngine
-        engine, config = FakeEngine(a=args.a, b=args.b), {"a": args.a, "b": args.b}
+    from bench.engines import load_engine
+    engine, config = load_engine(args.engine, **({"a": args.a, "b": args.b} if args.engine == "fake" else {}))
     run_dir = run(engine, args.trace, args.engine, config, args.results_root, args.warmup, args.telemetry)
     print(run_dir)
 

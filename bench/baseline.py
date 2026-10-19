@@ -1,11 +1,14 @@
-"""HF baseline campaign: burst run -> capacity -> rate traces at 0.3x/0.7x/1.2x -> 3 shuffled repetitions.
+"""Serving campaign: burst + 0.3x/0.7x/1.2x-capacity traces, for one or more engines, in shuffled repetitions.
 
-The first burst run measures capacity (achieved rate on the burst trace, about 1/S) and counts as repetition 1's
-burst. Every repetition runs each trace once, in an order shuffled per repetition with a recorded seed, so slow
-drift (temperature, background load, the Phase 0 evening slowdown) is spread across rates instead of always hitting
-the same position. Between runs the GPU cools to its idle temperature at campaign start (plus a tolerance) rather
-than for a fixed time. Every run samples GPU and host-CPU telemetry. A manifest listing every run folder is written
-to results/<stamp>_hf_baseline/manifest.json and updated after each run.
+Default (the Phase 0 HF baseline): the first burst run measures capacity (achieved rate on the burst trace, about
+1/S), which sets the three rates and counts as repetition 1's burst. With --rates, existing rate traces are reused
+and no capacity run happens, so several engines can be compared on exactly the same traces (--engines hf,contiguous).
+
+Every repetition runs each (engine, trace) pair once, in an order shuffled per repetition with a recorded seed, so
+slow drift (temperature, background load, the Phase 0 evening slowdown) is spread across engines and rates instead
+of always hitting the same position. Between runs the GPU cools to its idle temperature at campaign start (plus a
+tolerance) rather than for a fixed time. Every run samples GPU and host-CPU telemetry. A manifest listing every run
+folder is written to results/<stamp>_<engines>_campaign/manifest.json and updated after each run.
 """
 
 import argparse
@@ -26,13 +29,13 @@ N, SEED = 100, 0
 COOL_TOL_C, COOL_MIN_S, COOL_MAX_S, COOL_POLL_S = 3.0, 30.0, 600.0, 5.0
 
 
-def rep_orders(burst: Path, rate_traces: list[Path], reps: int, seed: int) -> list[list[Path]]:
-    """Run order per repetition. Repetition 1 already ran its burst first (to measure capacity), so it shuffles only
-    the rate traces; later repetitions shuffle all four."""
+def rep_orders(items: list, reps: int, seed: int, already_run: tuple = ()) -> list[list]:
+    """Run order per repetition: each repetition is a shuffle of `items`. Items in `already_run` were run before the
+    shuffle in repetition 1 (the capacity-measuring burst), so repetition 1 leaves them out."""
     rng = random.Random(seed)
     orders = []
     for rep in range(1, reps + 1):
-        order = list(rate_traces) if rep == 1 else [burst, *rate_traces]
+        order = [x for x in items if not (rep == 1 and x in already_run)]
         rng.shuffle(order)
         orders.append(order)
     return orders
@@ -62,8 +65,11 @@ def round_sig(x: float, digits: int = 3) -> float:
 
 
 def main() -> None:
-    """Run the whole campaign with one loaded HF engine."""
+    """Run the whole campaign with every engine loaded once."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--engines", default="hf", help="comma-separated: hf, contiguous")
+    p.add_argument("--rates", default=None,
+                   help="comma-separated req/s of existing rate traces (skips the capacity run), e.g. 0.0441,0.103,0.176")
     p.add_argument("--reps", type=int, default=3)
     p.add_argument("--traces", type=Path, default=Path("traces"))
     p.add_argument("--results-root", type=Path, default=Path("results"))
@@ -72,48 +78,60 @@ def main() -> None:
                    help="cooldown target in °C (default: idle GPU temperature at campaign start + tolerance)")
     p.add_argument("--cool-tol", type=float, default=COOL_TOL_C)
     args = p.parse_args()
+    names = args.engines.split(",")
+    if args.rates is None and len(names) > 1:
+        p.error("comparing engines needs --rates, so that all of them replay the same traces")
 
-    from bench.engines.hf import MODEL, HFEngine
-    idle_c = gpu_temperature()  # before loading the model, so it is the idle baseline
-    engine = HFEngine()
-    config = {"model": MODEL, "dtype": "bfloat16", "attn": "sdpa", "batch": 1}
-    campaign = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_hf_baseline"
+    from bench.engines import load_engine
+    idle_c = gpu_temperature()  # before loading any model, so it is the idle baseline
+    engines = {name: load_engine(name) for name in names}
+    campaign = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_{'_'.join(names)}_campaign"
     campaign.mkdir(parents=True, exist_ok=False)
     target_c = args.cool_to if args.cool_to is not None else (idle_c + args.cool_tol if idle_c is not None else None)
-    manifest = {"n": N, "seed": SEED, "fractions": FRACTIONS, "order_seed": args.order_seed,
+    manifest = {"engines": names, "n": N, "seed": SEED, "fractions": FRACTIONS, "order_seed": args.order_seed,
                 "idle_gpu_c": idle_c, "cool_target_c": target_c, "runs": []}
 
-    def replay(trace: Path, rep: int) -> dict:
+    def replay(name: str, trace: Path, rep: int) -> dict:
         """One run + summary, recorded in the manifest."""
+        engine, config = engines[name]
         t0 = time.time()
-        run_dir = run(engine, trace, "hf", config, results_root=args.results_root, telemetry=True)
+        run_dir = run(engine, trace, name, config, results_root=args.results_root, telemetry=True)
         s = summarize_run(run_dir)
-        manifest["runs"].append({"rep": rep, "trace": trace.name, "run_dir": str(run_dir),
+        manifest["runs"].append({"rep": rep, "engine": name, "trace": trace.name, "run_dir": str(run_dir),
                                  "wall_s": time.time() - t0, "achieved_rate_req_s": s["achieved_rate_req_s"],
                                  "overload": s["overload"]["flag"]})
         (campaign / "manifest.json").write_text(json.dumps(manifest, indent=2))
-        print(f"rep {rep} {trace.name}: {time.time() - t0:.0f} s, achieved {s['achieved_rate_req_s']:.4f} req/s, "
-              f"TTFT p50 {s['ttft_s']['p50']:.2f} s, TPOT p50 {s['tpot_s']['p50'] * 1e3:.1f} ms, "
+        print(f"rep {rep} {name} {trace.name}: {time.time() - t0:.0f} s, achieved {s['achieved_rate_req_s']:.4f} "
+              f"req/s, TTFT p50 {s['ttft_s']['p50']:.2f} s, TPOT p50 {s['tpot_s']['p50'] * 1e3:.1f} ms, "
               f"overload {s['overload']['flag']} -> {run_dir}", flush=True)
         manifest["runs"][-1]["cooldown_after"] = cool_down(target_c)
         (campaign / "manifest.json").write_text(json.dumps(manifest, indent=2))
         return s
 
     burst = args.traces / f"sharegpt_n{N}_seed{SEED}_burst.jsonl"
-    capacity = replay(burst, rep=1)["achieved_rate_req_s"]
-    rates = [round_sig(f * capacity) for f in FRACTIONS]
-    manifest.update({"capacity_req_s": capacity, "rates_req_s": rates})
+    already_run: tuple = ()
+    if args.rates is None:
+        capacity = replay(names[0], burst, rep=1)["achieved_rate_req_s"]
+        rates = [round_sig(f * capacity) for f in FRACTIONS]
+        manifest["capacity_req_s"] = capacity
+        already_run = ((names[0], burst),)
+        print(f"capacity {capacity:.4f} req/s -> rates {rates}", flush=True)
+    else:
+        rates = [float(r) for r in args.rates.split(",")]
+    manifest["rates_req_s"] = rates
     rate_traces = [args.traces / f"sharegpt_n{N}_seed{SEED}_rate{r:g}.jsonl" for r in rates]
     missing = [r for r, t in zip(rates, rate_traces) if not t.exists()]
+    if missing and args.rates is not None:
+        p.error(f"--rates given but no trace for {missing}")
     if missing:
         build_traces(Path("data/raw/ShareGPT_V3_unfiltered_cleaned_split.json"), args.traces, N, SEED, missing, False)
-    print(f"capacity {capacity:.4f} req/s -> rates {rates}", flush=True)
 
-    orders = rep_orders(burst, rate_traces, args.reps, args.order_seed)
-    manifest["orders"] = [[t.name for t in order] for order in orders]
+    items = [(name, t) for name in names for t in [burst, *rate_traces]]
+    orders = rep_orders(items, args.reps, args.order_seed, already_run)
+    manifest["orders"] = [[[name, t.name] for name, t in order] for order in orders]
     for rep, order in enumerate(orders, start=1):
-        for trace in order:
-            replay(trace, rep)
+        for name, trace in order:
+            replay(name, trace, rep)
     print(f"done: {campaign / 'manifest.json'}")
 
 
