@@ -179,10 +179,10 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
 
 
 def main() -> None:
-    """CLI: replay a trace against the fake or HF engine."""
+    """CLI: replay a trace against the fake, HF, or Phase 1 contiguous-cache engine."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--trace", type=Path, required=True)
-    p.add_argument("--engine", choices=["fake", "hf"], default="fake")
+    p.add_argument("--engine", choices=["fake", "hf", "contiguous"], default="fake")
     p.add_argument("--a", type=float, default=1e-4, help="fake: prefill seconds per prompt token")
     p.add_argument("--b", type=float, default=5e-3, help="fake: seconds per decode step")
     p.add_argument("--results-root", type=Path, default=Path("results"))
@@ -193,6 +193,12 @@ def main() -> None:
     if args.engine == "hf":
         from bench.engines.hf import MODEL, HFEngine
         engine, config = HFEngine(), {"model": MODEL, "dtype": "bfloat16", "attn": "sdpa", "batch": 1}
+    elif args.engine == "contiguous":
+        from engine.engine import MAX_LEN, ContiguousEngine
+        from engine.loader import DEFAULT_MODEL
+        engine = ContiguousEngine()
+        config = {"model": DEFAULT_MODEL, "dtype": "bfloat16", "attn": "matmul-softmax", "kv": "contiguous",
+                  "max_len": MAX_LEN, "fused_matmuls": True, "batch": 1}
     else:
         from bench.engines.fake import FakeEngine
         engine, config = FakeEngine(a=args.a, b=args.b), {"a": args.a, "b": args.b}

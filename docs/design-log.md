@@ -18,6 +18,9 @@ Two or three lines per phase: what was chosen, what was tried and failed, and wh
 
 ## Phase 1: Forward pass and contiguous KV cache
 
+- Plain tensors and functions, flat [T, ...] tokens with explicit positions, fused QKV ([896, 1152]) and gate/up ([896, 9728]) matmuls. Unfused, the fp32 forward pass is bit-identical to HF eager, which pins every op exactly; fused, logits differ by 2.4e-4 (8e-6 relative), all from cuBLAS reduction order, so the "~1e-4" gate is met in relative terms and checked bit-exactly via the unfused switch. bf16 argmax agreement with fp32 matches HF bf16 eager (95.5% vs 95.6%); SDPA's 97.4% comes from keeping attention probabilities in fp32, a target for the Phase 3 kernel.
+- Tried and fixed: GQA via a broadcast `torch.matmul` against K as [2, 1, 64, S] silently expanded and copied K and V 7× per layer; stacking the group into M (q as [2, 7T, 64], `bmm`) reads each KV head once. With RoPE tables gathered once per forward and a 4-kernel rotation, a decode step went from 1381 to 905 launches (HF: 1008). Softmax upcasts to at least fp32 (a hard fp32 cast broke fp64 unit tests).
+
 ## Phase 2: Paged KV cache and block manager
 
 ## Phase 3: Triton paged-attention decode

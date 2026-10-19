@@ -1,10 +1,11 @@
-"""Profile HF batch-1 decode steps (torch.profiler, CPU + CUDA) and split each step's wall time into parts.
+"""Profile batch-1 decode steps of an engine (torch.profiler, CPU + CUDA) and split each step's wall time into parts.
 
 Per profiled step (medians over steps): wall time, GPU busy time (union of kernel intervals), kernel count, kernel
 launch API calls and their CPU time, time blocked in sync calls (the .item() copy waiting for the GPU), and the
 remainder (Python, nn.Module, and aten dispatch). Unprofiled steps are timed too, to show the profiler's overhead.
 
-Writes results/profile/<stamp>_hf/{summary.json, key_averages.txt, env.json}, plus trace.json.gz for Perfetto
+Works with any batch-1 engine whose step() decodes one token (--engine hf or contiguous). Writes
+results/profile/<stamp>_<engine>/{summary.json, key_averages.txt, env.json}, plus trace.json.gz for Perfetto
 (gitignored). One model load and a few hundred decode steps: well under a minute.
 """
 
@@ -89,8 +90,9 @@ def median_row(rows: list[dict]) -> dict:
 
 
 def main() -> None:
-    """Load HF, prefill one trace prompt, time unprofiled decode steps, then profile a few more."""
+    """Load the engine, prefill one trace prompt, time unprofiled decode steps, then profile a few more."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("--engine", choices=["hf", "contiguous"], default="hf")
     p.add_argument("--trace", type=Path, default=Path("traces/sharegpt_n100_seed0_burst.jsonl"))
     p.add_argument("--request", type=int, default=0, help="index of the trace request whose prompt is used")
     p.add_argument("--warmup", type=int, default=20)
@@ -99,12 +101,17 @@ def main() -> None:
     p.add_argument("--results-root", type=Path, default=Path("results/profile"))
     args = p.parse_args()
 
-    from bench.engines.hf import MODEL, HFEngine
-    out_dir = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_hf"
+    out_dir = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_{args.engine}"
     out_dir.mkdir(parents=True, exist_ok=False)
     env = {"static": static_env(args.trace), "gpu_before": gpu_snapshot()}
 
-    engine = HFEngine()
+    if args.engine == "hf":
+        from bench.engines.hf import MODEL, HFEngine
+        engine = HFEngine()
+    else:
+        from engine.engine import ContiguousEngine
+        from engine.loader import DEFAULT_MODEL as MODEL
+        engine = ContiguousEngine()
     prompt = load_trace(args.trace)[args.request].prompt_ids
     total = 1 + args.warmup + args.unprofiled + args.profiled
     engine.add_request(0, prompt, total)
@@ -126,7 +133,7 @@ def main() -> None:
     rows = breakdown(prof.events())
     med = median_row(rows)
     summary = {
-        "model": MODEL, "prompt_len": len(prompt), "warmup": args.warmup,
+        "engine": args.engine, "model": MODEL, "prompt_len": len(prompt), "warmup": args.warmup,
         "context_len_at_profile": len(prompt) + 1 + args.warmup + args.unprofiled,
         "unprofiled_step_us": {"p50": statistics.median(unprofiled_us), "min": min(unprofiled_us),
                                "max": max(unprofiled_us), "n": len(unprofiled_us)},

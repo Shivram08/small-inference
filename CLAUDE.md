@@ -47,7 +47,7 @@ bench/
   metrics.py       # raw timestamps -> summary metrics
   roofline.py      # bandwidth, matmul peak, decode-shaped sweep, launch overhead
   telemetry.py     # GPU (nvidia-smi) and host-CPU (Windows counters) sampling during a run
-  profile_hf.py    # torch.profiler breakdown of one HF decode step
+  profile_decode.py # torch.profiler breakdown of a batch-1 decode step (HF or this engine)
   cpu_probe.py     # CPU-only timing probe for host-side variance
   engines/
     base.py        # Engine protocol

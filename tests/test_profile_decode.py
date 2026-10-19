@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from torch.autograd import DeviceType
 from torch.autograd.profiler_util import Interval
 
-from bench.profile_hf import STEP_LABEL, breakdown, interval_union_us
+from bench.profile_decode import STEP_LABEL, breakdown, interval_union_us
 
 
 @dataclass
