@@ -74,7 +74,7 @@ def test_overloaded_rate_short_and_queue_growing():
     assert s["achieved_rate_req_s"] == pytest.approx(1.0)
     assert s["queue_slope_req_s"] == pytest.approx(1.0, rel=0.1)
     assert s["overload"] == {"flag": True, "rate_short": True, "queue_growing": True,
-                             "rate_tol": 0.05, "slope_tol": 0.05}
+                             "rate_tol": 0.05, "slope_tol": 0.05, "gen_spread_frac": 0.0}  # equal generation times
 
 
 def test_burst_gives_capacity_and_no_flag():
@@ -104,3 +104,18 @@ def test_summarize_run_writes_valid_json(tmp_path):
         (tmp_path / name).write_text("".join(json.dumps(r) + "\n" for r in rows))
     summarize_run(tmp_path)
     json.loads((tmp_path / "summary.json").read_text(), parse_constant=lambda c: pytest.fail(f"non-JSON {c}"))
+
+
+def test_rate_check_allows_generation_spread_but_not_queueing():
+    """A short trace whose requests generate for very different times reads 'short' on the raw rate even though the
+    server keeps up; the generation-time allowance clears it. Queueing delay does not count toward the allowance."""
+    # 20 arrivals 1 s apart; generation alternates 0.1 s and 6 s (output length), no queueing (infinite servers).
+    reqs = []
+    for i in range(20):
+        a, g = float(i), (0.1 if i % 2 else 6.0)
+        reqs.append({"id": i, "arrival_s": a, "token_s": [a + 0.05, a + 0.05 + g], "output_len": 2})
+    steps = [{"start_s": t * 0.5, "end_s": t * 0.5 + 0.5, "n_tokens": 1, "outstanding": 1, "waiting": 0}
+             for t in range(60)]
+    s = summarize(reqs, steps, warmup_frac=0.0)
+    raw_short = s["achieved_rate_req_s"] < 0.95 * s["offered_rate_req_s"]
+    assert raw_short and not s["overload"]["rate_short"] and s["overload"]["gen_spread_frac"] > 0.2

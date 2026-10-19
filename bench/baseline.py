@@ -26,6 +26,7 @@ from bench.trace import build_traces
 
 FRACTIONS = (0.3, 0.7, 1.2)
 N, SEED = 100, 0
+SHAREGPT = Path("data/raw/ShareGPT_V3_unfiltered_cleaned_split.json")
 COOL_TOL_C, COOL_MIN_S, COOL_MAX_S, COOL_POLL_S = 3.0, 30.0, 600.0, 5.0
 
 
@@ -77,6 +78,8 @@ def main() -> None:
     p.add_argument("--fractions", default=",".join(map(str, FRACTIONS)),
                    help="capacity fractions for the rate traces when --rates is not given, e.g. 0.2,0.4,0.6,0.8,1.0,1.2")
     p.add_argument("--reps", type=int, default=3)
+    p.add_argument("--n", type=int, default=N, help="requests per trace (100 for HF; 1000 for the batching engines, "
+                   "so the arrival span is much longer than any request's latency)")
     p.add_argument("--traces", type=Path, default=Path("traces"))
     p.add_argument("--results-root", type=Path, default=Path("results"))
     p.add_argument("--order-seed", type=int, default=0, help="seed for the per-repetition run order")
@@ -95,7 +98,7 @@ def main() -> None:
     campaign.mkdir(parents=True, exist_ok=False)
     target_c = args.cool_to if args.cool_to is not None else (idle_c + args.cool_tol if idle_c is not None else None)
     fractions = [float(f) for f in args.fractions.split(",")]
-    manifest = {"engines": names, "model": args.model, "kv_gib": args.kv_gib, "n": N, "seed": SEED,
+    manifest = {"engines": names, "model": args.model, "kv_gib": args.kv_gib, "n": args.n, "seed": SEED,
                 "fractions": fractions, "order_seed": args.order_seed,
                 "idle_gpu_c": idle_c, "cool_target_c": target_c, "runs": []}
 
@@ -116,7 +119,9 @@ def main() -> None:
         (campaign / "manifest.json").write_text(json.dumps(manifest, indent=2))
         return s
 
-    burst = args.traces / f"sharegpt_n{N}_seed{SEED}_burst.jsonl"
+    burst = args.traces / f"sharegpt_n{args.n}_seed{SEED}_burst.jsonl"
+    if not burst.exists():  # same seeded sample as the rate traces built later
+        build_traces(SHAREGPT, args.traces, args.n, SEED, [], True)
     already_run: tuple = ()
     if args.rates is None:
         capacity = replay(names[0], burst, rep=1)["achieved_rate_req_s"]
@@ -127,12 +132,12 @@ def main() -> None:
     else:
         rates = [float(r) for r in args.rates.split(",")]
     manifest["rates_req_s"] = rates
-    rate_traces = [args.traces / f"sharegpt_n{N}_seed{SEED}_rate{r:g}.jsonl" for r in rates]
+    rate_traces = [args.traces / f"sharegpt_n{args.n}_seed{SEED}_rate{r:g}.jsonl" for r in rates]
     missing = [r for r, t in zip(rates, rate_traces) if not t.exists()]
     if missing and args.rates is not None:
         p.error(f"--rates given but no trace for {missing}")
     if missing:
-        build_traces(Path("data/raw/ShareGPT_V3_unfiltered_cleaned_split.json"), args.traces, N, SEED, missing, False)
+        build_traces(SHAREGPT, args.traces, args.n, SEED, missing, False)
 
     items = [(name, t) for name in names for t in [burst, *rate_traces]]
     orders = rep_orders(items, args.reps, args.order_seed, already_run)

@@ -1,0 +1,171 @@
+{
+  "engines": [
+    "continuous"
+  ],
+  "model": null,
+  "kv_gib": 1.5,
+  "n": 100,
+  "seed": 0,
+  "fractions": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0,
+    1.2
+  ],
+  "order_seed": 0,
+  "idle_gpu_c": 52.0,
+  "cool_target_c": 55.0,
+  "runs": [
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_burst.jsonl",
+      "run_dir": "results/20261019-190320_continuous_sharegpt_n100_seed0_burst",
+      "wall_s": 25.604475259780884,
+      "achieved_rate_req_s": 4.86965534138462,
+      "overload": null,
+      "cooldown_after": {
+        "waited_s": 35.122403008997935,
+        "start_c": 66.0,
+        "end_c": 55.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate4.87.jsonl",
+      "run_dir": "results/20261019-190427_continuous_sharegpt_n100_seed0_rate4.87",
+      "wall_s": 36.46490478515625,
+      "achieved_rate_req_s": 2.981409963136151,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.09895035899899,
+        "start_c": 70.0,
+        "end_c": 55.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate2.92.jsonl",
+      "run_dir": "results/20261019-190533_continuous_sharegpt_n100_seed0_rate2.92",
+      "wall_s": 52.88367486000061,
+      "achieved_rate_req_s": 2.017014717475304,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.082697134999762,
+        "start_c": 66.0,
+        "end_c": 54.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate1.95.jsonl",
+      "run_dir": "results/20261019-190656_continuous_sharegpt_n100_seed0_rate1.95",
+      "wall_s": 65.58894085884094,
+      "achieved_rate_req_s": 1.6197700495709018,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.089223082002718,
+        "start_c": 68.0,
+        "end_c": 55.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate0.974.jsonl",
+      "run_dir": "results/20261019-190832_continuous_sharegpt_n100_seed0_rate0.974",
+      "wall_s": 116.83096313476562,
+      "achieved_rate_req_s": 0.8905568616344416,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 35.12674803600021,
+        "start_c": 70.0,
+        "end_c": 55.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate5.84.jsonl",
+      "run_dir": "results/20261019-191104_continuous_sharegpt_n100_seed0_rate5.84",
+      "wall_s": 37.669349670410156,
+      "achieved_rate_req_s": 2.9122869552940784,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.078009795997787,
+        "start_c": 67.0,
+        "end_c": 54.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n100_seed0_rate3.9.jsonl",
+      "run_dir": "results/20261019-191212_continuous_sharegpt_n100_seed0_rate3.9",
+      "wall_s": 40.75591731071472,
+      "achieved_rate_req_s": 2.696572940959177,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.076657989000523,
+        "start_c": 68.0,
+        "end_c": 54.0,
+        "target_c": 55.0,
+        "timed_out": false
+      }
+    }
+  ],
+  "capacity_req_s": 4.86965534138462,
+  "rates_req_s": [
+    0.974,
+    1.95,
+    2.92,
+    3.9,
+    4.87,
+    5.84
+  ],
+  "orders": [
+    [
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate4.87.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate2.92.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate1.95.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate0.974.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate5.84.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n100_seed0_rate3.9.jsonl"
+      ]
+    ]
+  ]
+}

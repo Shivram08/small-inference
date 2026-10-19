@@ -1,0 +1,99 @@
+{
+  "gpu_interval_s": 1.0,
+  "cpu_interval_s": 2,
+  "notes": {},
+  "gpu": {
+    "n_samples": 60,
+    "span_s": 60.79699993133545,
+    "busy_fraction": 0.0,
+    "reason_active_fraction_while_busy": null,
+    "temperature_c": {
+      "min": 56.0,
+      "p50": 70.0,
+      "mean": 67.65,
+      "max": 72.0
+    },
+    "sm_clock_mhz": {
+      "min": 1912.0,
+      "p50": 1927.0,
+      "mean": 1926.75,
+      "max": 1927.0
+    },
+    "mem_clock_mhz": {
+      "min": 5501.0,
+      "p50": 7001.0,
+      "mean": 6976.0,
+      "max": 7001.0
+    },
+    "power_w": {
+      "min": 22.46,
+      "p50": 41.91,
+      "mean": 41.166000000000004,
+      "max": 48.15
+    },
+    "pstate_fraction": {
+      "P0": 1.0
+    },
+    "throttle": {
+      "sw_power_cap": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_power_brake_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sync_boost": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      }
+    }
+  },
+  "cpu": {
+    "n_samples": 30,
+    "span_s": 58.19,
+    "busiest_class_fraction": {
+      "P": 1.0
+    },
+    "busiest_class_switches": 0,
+    "busiest_effective_mhz": {
+      "min": 3866.859095483426,
+      "p50": 4345.8977283467275,
+      "mean": 4326.991795789792,
+      "max": 4515.242661949964
+    },
+    "effective_mhz_by_class": {
+      "E": {
+        "min": 285.0162346952769,
+        "p50": 297.3794941922498,
+        "mean": 323.82331147050957,
+        "max": 487.54020680939385
+      },
+      "LPE": {
+        "min": 382.1001632763056,
+        "p50": 422.12610014954316,
+        "mean": 421.75770562205884,
+        "max": 452.6844356381557
+      },
+      "P": {
+        "min": 3435.3577730862016,
+        "p50": 3610.0452780176465,
+        "mean": 3636.3565024584386,
+        "max": 4127.256263040105
+      }
+    }
+  }
+}

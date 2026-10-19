@@ -188,7 +188,9 @@ def table_md(res: dict) -> str:
     lines += ["", f"K outlier ratio (max channel absmax / median, per layer): mean {statistics.fmean(ratios):.1f}, "
               f"max {max(ratios):.1f} (layer {ratios.index(max(ratios))}), min {min(ratios):.1f}"]
     if "timing" in res:
-        lines += ["", "| Batch | Context | " + " | ".join(f"{f} µs/layer" for f in FORMATS) + " |",
+        n = len(res.get("timing_reps", [None]))
+        lines += ["", f"Decode kernel, median of {n} repetition(s); batch x context points below ~4k at small batch are "
+                  "launch-bound.", "", "| Batch | Context | " + " | ".join(f"{f} µs/layer" for f in FORMATS) + " |",
                   "|---|---|" + "---|" * len(FORMATS)]
         pts = sorted({(r["batch"], r["context_len"]) for r in res["timing"]})
         for b, S in pts:
@@ -205,6 +207,7 @@ def main() -> None:
     p.add_argument("--trace", type=Path, default=Path("traces/sharegpt_n100_seed0_burst.jsonl"))
     p.add_argument("--budget-gib", type=float, default=2.0)
     p.add_argument("--timing", action="store_true", help="also time the decode kernel (needs an idle laptop)")
+    p.add_argument("--timing-reps", type=int, default=3, help="timing repetitions; the table shows medians")
     p.add_argument("--results-root", type=Path, default=Path("results/kv_quant"))
     args = p.parse_args()
 
@@ -218,7 +221,10 @@ def main() -> None:
            "quality": quality(model, documents(args.trace, args.docs)),
            "capacity": capacity(model.cfg, int(args.budget_gib * 2**30))}
     if args.timing:
-        res["timing"] = timing(model.cfg, [(1, 1024), (1, 4096), (8, 1024), (8, 4096), (32, 1024), (32, 4096)])
+        pts = [(1, 1024), (1, 4096), (8, 1024), (8, 4096), (32, 1024), (32, 4096)]
+        res["timing_reps"] = [timing(model.cfg, pts) for _ in range(args.timing_reps)]
+        res["timing"] = [dict(r, us_per_layer=statistics.median(rep[i]["us_per_layer"] for rep in res["timing_reps"]))
+                         for i, r in enumerate(res["timing_reps"][0])]  # medians over repetitions
     env["gpu_after"] = gpu_snapshot()
     (out_dir / "results.json").write_text(json.dumps(res, indent=2))
     (out_dir / "table.md").write_text(table_md(res))

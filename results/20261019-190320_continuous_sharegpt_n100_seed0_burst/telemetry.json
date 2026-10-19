@@ -1,0 +1,109 @@
+{
+  "gpu_interval_s": 1.0,
+  "cpu_interval_s": 2,
+  "notes": {},
+  "gpu": {
+    "n_samples": 20,
+    "span_s": 19.573000192642212,
+    "busy_fraction": 0.15,
+    "reason_active_fraction_while_busy": {
+      "applications_clocks_setting": 0.0,
+      "sw_power_cap": 0.0,
+      "hw_slowdown": 0.0,
+      "sync_boost": 0.0,
+      "sw_thermal_slowdown": 0.0,
+      "hw_thermal_slowdown": 0.0,
+      "hw_power_brake_slowdown": 0.0,
+      "display_clock_setting": 0.0,
+      "reliability": 0.0
+    },
+    "temperature_c": {
+      "min": 55.0,
+      "p50": 65.5,
+      "mean": 64.3,
+      "max": 69.0
+    },
+    "sm_clock_mhz": {
+      "min": 1927.0,
+      "p50": 1927.0,
+      "mean": 1927.0,
+      "max": 1927.0
+    },
+    "mem_clock_mhz": {
+      "min": 7001.0,
+      "p50": 7001.0,
+      "mean": 7001.0,
+      "max": 7001.0
+    },
+    "power_w": {
+      "min": 19.9,
+      "p50": 41.89,
+      "mean": 41.0105,
+      "max": 49.76
+    },
+    "pstate_fraction": {
+      "P0": 1.0
+    },
+    "throttle": {
+      "sw_power_cap": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_power_brake_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sync_boost": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      }
+    }
+  },
+  "cpu": {
+    "n_samples": 10,
+    "span_s": 18.106,
+    "busiest_class_fraction": {
+      "P": 1.0
+    },
+    "busiest_class_switches": 0,
+    "busiest_effective_mhz": {
+      "min": 4222.032476713645,
+      "p50": 4584.307889281897,
+      "mean": 4525.674683758316,
+      "max": 4663.243707965962
+    },
+    "effective_mhz_by_class": {
+      "E": {
+        "min": 282.43526416105783,
+        "p50": 334.6325211111705,
+        "mean": 353.9607149180904,
+        "max": 479.0858254881715
+      },
+      "LPE": {
+        "min": 364.58439171209295,
+        "p50": 417.20132794326366,
+        "mean": 408.6809152789143,
+        "max": 426.6457319382209
+      },
+      "P": {
+        "min": 3372.1756771794153,
+        "p50": 3644.382210287346,
+        "mean": 3675.144716059178,
+        "max": 3881.467599288735
+      }
+    }
+  }
+}

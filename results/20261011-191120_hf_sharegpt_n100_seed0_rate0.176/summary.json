@@ -46,6 +46,7 @@
     "rate_short": true,
     "queue_growing": true,
     "rate_tol": 0.05,
-    "slope_tol": 0.05
+    "slope_tol": 0.05,
+    "e2e_spread_frac": 0.020910971580087284
   }
 }

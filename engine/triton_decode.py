@@ -11,9 +11,11 @@ Single pass (grid S x H_kv): a program owns one (sequence, KV head). It loads th
 and writes acc / l. Each KV head's cache is read once for all g query heads, which is why decode attention has
 arithmetic intensity about g: 7 query heads x 2 FLOPs x 2 (QK and PV) per K/V element of 2 B.
 
-Precision: q K^T takes bf16 x bf16 products, which are exact in fp32, accumulated in fp32. P stays fp32 for P V (V is
-upcast and the dot runs as true fp32, input_precision="ieee"): rounding P to bf16 is what put HF eager and the Phase 1
-reference 2 points of argmax agreement below SDPA. With fp32 caches both dots are IEEE fp32.
+Precision: q K^T takes bf16 x bf16 products, which are exact in fp32, accumulated in fp32. P is not rounded to bf16
+for P V (V is upcast; the dot runs in TF32 on tensor cores, a 10-bit mantissa against bf16's 7): rounding P to bf16 is
+what put HF eager and the Phase 1 reference 2 points of argmax agreement below SDPA. With fp32 caches both dots are
+IEEE fp32. (The first version ran P V as an IEEE fp32 dot on FMA units; at d = 128 and with INT8's halved bytes that
+made the kernel compute-bound.)
 
 Split-K (grid S x H_kv x splits, the Flash-Decoding idea): at batch 1 the single pass launches only 2 programs on a
 20-SM GPU, so a long context is read by 2 SMs. Splitting the context into chunks gives each split's program a
@@ -53,7 +55,8 @@ def _decode_kernel(q_ptr, k_ptr, v_ptr, bt_ptr, ctx_ptr, o_ptr, m_ptr, l_ptr, sc
                    ks_ptr, vs_ptr, stage_ptr, tail_ptr, stride_ksh, stride_ksn, stride_vsh, stride_vsn,
                    stride_sth, stride_stn, stride_stb,
                    G: tl.constexpr, G_PAD: tl.constexpr, D: tl.constexpr, BLOCK: tl.constexpr,
-                   TILE: tl.constexpr, SPLIT: tl.constexpr, FP32: tl.constexpr, KV_MODE: tl.constexpr):
+                   TILE: tl.constexpr, SPLIT: tl.constexpr, FP32: tl.constexpr, KV_MODE: tl.constexpr,
+                   TPB: tl.constexpr, PREC: tl.constexpr):
     """One (sequence, KV head[, split]) program; see the module docstring. KV_MODE 0: K/V in the compute dtype;
     1: INT8 with per-token fp16 scales for K and V; 2: INT8 K with per-(block, channel) scales, the partial last
     block's K in a bf16 staging slot, and per-token INT8 V."""
@@ -97,14 +100,21 @@ def _decode_kernel(q_ptr, k_ptr, v_ptr, bt_ptr, ctx_ptr, o_ptr, m_ptr, l_ptr, sc
             ks = tl.load(ks_ptr + h * stride_ksh + blk * stride_ksn + t % BLOCK, mask=tmask, other=0.0)
             scores = scores * ks.to(tl.float32)[None, :]
         else:
+            # Tiles are block-aligned (TILE % BLOCK == 0, splits start at TILE multiples), so the tile's TPB blocks'
+            # channel scales load once each, [TPB, D], and broadcast over their BLOCK tokens.
             is_q = t < n_quant
             kq = tl.load(k_ptr + off[:, None] + d[None, :], mask=(tmask & is_q)[:, None], other=0).to(tl.float32)
-            ksc = tl.load(ks_ptr + h * stride_ksh + blk[:, None] * stride_ksn + d[None, :],
-                          mask=(tmask & is_q)[:, None], other=0.0).to(tl.float32)
-            kt = tl.load(stage_ptr + h * stride_sth + tail * stride_stn + (t % BLOCK)[:, None] * stride_stb
-                         + d[None, :], mask=(tmask & (t >= n_quant))[:, None], other=0.0).to(tl.float32)
-            k = tl.where(is_q[:, None], kq * ksc, kt)
-            scores = tl.dot(q.to(tl.float32), tl.trans(k), input_precision="ieee")
+            b_idx = t0 // BLOCK + tl.arange(0, TPB)
+            b_ok = b_idx * BLOCK < n_quant
+            blk_b = tl.load(bt_ptr + s * stride_bts + b_idx, mask=b_ok, other=0).to(tl.int64)
+            ksc = tl.load(ks_ptr + h * stride_ksh + blk_b[:, None] * stride_ksn + d[None, :], mask=b_ok[:, None],
+                          other=0.0).to(tl.float32)
+            k = tl.reshape(tl.reshape(kq, (TPB, BLOCK, D)) * ksc[:, None, :], (TILE, D))
+            if t0 + TILE > n_quant:  # only the tile holding the partial last block reads the bf16 staging slot
+                kt = tl.load(stage_ptr + h * stride_sth + tail * stride_stn + (t % BLOCK)[:, None] * stride_stb
+                             + d[None, :], mask=(tmask & (t >= n_quant))[:, None], other=0.0).to(tl.float32)
+                k = tl.where(is_q[:, None], k, kt)
+            scores = tl.dot(q.to(tl.float32), tl.trans(k), input_precision=PREC)
         scores = tl.where(tmask[None, :], scores * scale, float("-inf"))
         m_new = tl.maximum(m_i, tl.max(scores, 1))
         alpha = tl.exp(m_i - m_new)
@@ -112,12 +122,12 @@ def _decode_kernel(q_ptr, k_ptr, v_ptr, bt_ptr, ctx_ptr, o_ptr, m_ptr, l_ptr, sc
         l_i = l_i * alpha + tl.sum(p, 1)
         if KV_MODE == 0:
             v = tl.load(v_ptr + off[:, None] + d[None, :], mask=tmask[:, None], other=0.0).to(tl.float32)
-            acc = acc * alpha[:, None] + tl.dot(p, v, input_precision="ieee")
+            acc = acc * alpha[:, None] + tl.dot(p, v, input_precision=PREC)
         else:
             # per-token V scale folded into P: sum_t p_t s_t v_int_t; l keeps the unscaled p
             v = tl.load(v_ptr + off[:, None] + d[None, :], mask=tmask[:, None], other=0).to(tl.float32)
             vs = tl.load(vs_ptr + h * stride_vsh + blk * stride_vsn + t % BLOCK, mask=tmask, other=0.0)
-            acc = acc * alpha[:, None] + tl.dot(p * vs.to(tl.float32)[None, :], v, input_precision="ieee")
+            acc = acc * alpha[:, None] + tl.dot(p * vs.to(tl.float32)[None, :], v, input_precision=PREC)
         m_i = m_new
 
     if SPLIT:
@@ -194,7 +204,11 @@ def paged_decode_attention(q: torch.Tensor, k_cache: torch.Tensor, v_cache: torc
     splits = min(splits, triton.cdiv(max_context, chunk))  # no split that is empty for every sequence
     out = torch.empty(S, Hq, D, device=q.device, dtype=q.dtype)
     common = dict(G=G, G_PAD=max(16, triton.next_power_of_2(G)), D=D, BLOCK=B, TILE=TILE,
-                  FP32=q.dtype == torch.float32, KV_MODE=quant.mode if quant else 0)
+                  FP32=q.dtype == torch.float32, KV_MODE=quant.mode if quant else 0, TPB=TILE // B,
+                  # fp32 caches/models: true fp32 dots (tests pin 1e-4). bf16: TF32 tensor cores for P V (and for
+                  # per-channel K's dequantized QK^T): a 10-bit mantissa, finer than bf16's 7, at tensor-core speed.
+                  PREC="ieee" if q.dtype == torch.float32 else "tf32")
+    assert TILE % B == 0, "tiles must be block-aligned"
     if quant is None:
         qargs = (q, q, q, context_lens, 0, 0, 0, 0, 0, 0, 0)  # unused pointers and strides
     else:

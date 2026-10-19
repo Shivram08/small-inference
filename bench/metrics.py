@@ -82,7 +82,14 @@ def summarize(requests: list[dict], steps: list[dict], warmup_frac: float = 0.1,
         slope = rate_short = queue_growing = flag = None
     else:
         slope = queue_slope(steps, arrivals[0] + arrival_span / 2, arrivals[-1])
-        rate_short = achieved < (1 - rate_tol) * offered
+        # The finish span is the arrival span plus the spread of per-request latencies, so on a short trace the
+        # achieved rate reads low even when the engine keeps up (0.2x load on a 100-request, 100 s trace whose
+        # requests take 0-10 s to generate: 6% short). Allow the spread of *generation* time (first to last token,
+        # set by output length) on top of rate_tol. Not E2E: under overload, queueing makes the E2E spread grow with
+        # the trace and would hide the overload. The queue-growth check is unaffected.
+        gen = sorted(r["token_s"][-1] - r["token_s"][0] for r in kept)
+        spread = (gen[int(0.9 * (len(gen) - 1))] - gen[int(0.1 * (len(gen) - 1))]) / arrival_span
+        rate_short = achieved < (1 - rate_tol - spread) * offered
         queue_growing = slope is not None and slope > slope_tol * offered
         flag = rate_short or queue_growing
     return {
@@ -102,7 +109,8 @@ def summarize(requests: list[dict], steps: list[dict], warmup_frac: float = 0.1,
         "goodput_req_s": goodput_frac * achieved,
         "queue_slope_req_s": slope,
         "overload": {"flag": flag, "rate_short": rate_short, "queue_growing": queue_growing,
-                     "rate_tol": rate_tol, "slope_tol": slope_tol},
+                     "rate_tol": rate_tol, "slope_tol": slope_tol,
+                     "gen_spread_frac": None if burst else spread},
     }
 
 
