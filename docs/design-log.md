@@ -23,6 +23,9 @@ Two or three lines per phase: what was chosen, what was tried and failed, and wh
 
 ## Phase 2: Paged KV cache and block manager
 
+- 16-token blocks (192 KiB across 24 layers for 0.5B bf16), pool `[layers, H_kv, N, 16, 64]` so one head-block is 2 KiB contiguous and a sequence's gather reshapes to `[H_kv, S, 64]` for free. Pure-Python block manager with a LIFO free list and reference counts (always 0/1 until prefix caching). Both caches expose the same `begin / write / attend` interface, so the model has no paged-specific code; metadata already packs several sequences into one flat forward, for Phase 4.
+- The reference paged attention gathers into contiguous K/V and reuses the Phase 1 `attention()` instead of SDPA, which makes paged == contiguous checkable bitwise (it is, in bf16 and fp32, through shuffled tables and block-boundary lengths). The cost is a full copy of each sequence's K/V per layer per step, which the Phase 3 kernel removes.
+
 ## Phase 3: Triton paged-attention decode
 
 ## Phase 4: Continuous batching scheduler

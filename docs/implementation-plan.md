@@ -100,10 +100,10 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 2: Paged KV cache and block manager
 
-- [ ] `BlockManager` (`can_allocate`, `allocate`, `append_slot`, `free`, `num_free_blocks`, `ref_count`). **Gate:** invariant 3
-- [ ] Builders for block tables, context lengths and slot mapping
-- [ ] Gather + SDPA paged attention. **Gate:** invariant 4 (lengths 1, 15, 16, 17, 33)
-- [ ] Measure the gather cost against contiguous attention
+- [x] `BlockManager` (`engine/block_manager.py`: `can_allocate`, `allocate`, `can_append`, `append_slots`/`append_slot`, `free`, `num_free_blocks`, `ref_count`, `check_invariants`). LIFO free list, so long-running pools hand out scattered, non-monotonic tables. **Gate (invariant 3):** `tests/test_block_manager.py`, 50 seeds × 400 random allocate / append / chunk-append / free operations with block sizes 1, 4, 16 and deliberate out-of-blocks failures; consistency checked after every operation against a shadow model; every block free exactly once at the end
+- [x] Builders for block tables, context lengths, and slot mapping (`engine/paged_cache.py: build_metadata`): packed multi-sequence metadata (query starts, positions, slots and their block/offset split, per-sequence block ids, a -1-padded int32 block table, context lengths, last-token rows). Gate: hand-checked packed prefill-chunk + decode example
+- [x] Paged cache, pool `[layers, H_kv, num_blocks, 16, 64]` per K and V (2 KiB per head-block), gather + reference attention (the Phase 1 `attention()`, not SDPA, so results can match bitwise). The model sees only `begin / write / attend`, shared by both caches. **Gate (invariant 4):** `tests/test_paged.py`: in shuffled pools, prefill logits and every decode step are **bit-identical** to the contiguous cache for lengths 1, 15, 16, 17, 33 (tiny fp64 model, block sizes 1/4/16; Qwen2.5-0.5B in bf16 and fp32, block size 16), and 50 greedy tokens match. Also: chunked prefill through the paged cache, and two packed sequences matching their solo runs (fp64-close; bitwise batch invariance is Phase 4's)
+- [~] Measure the gather cost against contiguous attention (`bench/paged_gather.py`). Smoke-tested in Balanced mode only (not a measurement): +30–50% per layer at batch 1 and 8. Pending: item 4b in `docs/deferred-runs.md`
 
 ## Phase 3: Triton paged-attention decode
 

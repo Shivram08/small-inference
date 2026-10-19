@@ -21,8 +21,12 @@ from dataclasses import dataclass
 import torch
 import torch.nn.functional as F
 
+from engine.attention import attention
 from engine.config import ModelConfig
 from engine.kv_cache import ContiguousKVCache
+from engine.paged_cache import PagedKVCache, PagedMetadata
+
+KVCache = ContiguousKVCache | PagedKVCache
 
 
 def rms_norm(x: torch.Tensor, weight: torch.Tensor, eps: float) -> torch.Tensor:
@@ -64,31 +68,6 @@ def apply_rope(x: torch.Tensor, cos: torch.Tensor, sin_signed: torch.Tensor) -> 
     """x [T, heads, d] (may be a strided view) rotated by precomputed rows [T, 1, d]. 4 kernels: cat, mul, mul, add."""
     x1, x2 = x.chunk(2, dim=-1)
     return x * cos + torch.cat((x2, x1), dim=-1) * sin_signed
-
-
-def attention(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor, q_pos: torch.Tensor, k_pos: torch.Tensor,
-              scale: float) -> torch.Tensor:
-    """Causal GQA attention for one sequence.
-
-    q: [T, Hq, d]; k, v: [Hkv, S, d] (strided views of the cache are fine); q_pos [T] and k_pos [S] are absolute
-    positions. Query t sees key s iff k_pos[s] <= q_pos[t]; a single query (T = 1) must be the last position, seeing
-    all S keys. Query head h uses KV head h // g, matching HF's repeat_kv. Softmax in at least fp32.
-
-    The g heads of a group are stacked along M: q [Hkv, g*T, d] x K^T [Hkv, d, S] -> scores [Hkv, g*T, S], which
-    reads each KV head's cache once. A broadcast matmul against K as [Hkv, 1, d, S] looks equivalent but makes
-    torch.matmul expand and copy K and V g times. Returns [T, Hq * d].
-    """
-    T, Hq, d = q.shape
-    Hkv = k.shape[0]
-    g = Hq // Hkv
-    qg = q.reshape(T, Hkv, g, d).permute(1, 2, 0, 3).reshape(Hkv, g * T, d)  # copies q only: T x 896 elements
-    scores = torch.bmm(qg, k.transpose(1, 2)) * scale  # [Hkv, g*T, S]
-    if T > 1:  # a single query is always the newest token, which sees every key: skip 2 kernels per layer
-        masked = (k_pos[None, :] > q_pos[:, None])  # [T, S]
-        scores = scores.view(Hkv, g, T, -1).masked_fill(masked, float("-inf")).view(Hkv, g * T, -1)
-    probs = torch.softmax(scores, dim=-1, dtype=torch.promote_types(q.dtype, torch.float32)).to(q.dtype)
-    out = torch.bmm(probs, v)  # [Hkv, g*T, d]
-    return out.view(Hkv, g, T, d).permute(2, 0, 1, 3).reshape(T, Hq * d)
 
 
 @dataclass
@@ -142,7 +121,7 @@ class Qwen2Model:
         cfg = ModelConfig.from_json(d / "config.json")
         return cls(cfg, load_weights(d, cfg, device, dtype))
 
-    def layer_forward(self, i: int, x: torch.Tensor, positions: torch.Tensor, cache: ContiguousKVCache | None,
+    def layer_forward(self, i: int, x: torch.Tensor, positions: torch.Tensor, cache: KVCache | None,
                       rope_rows: tuple[torch.Tensor, torch.Tensor] | None = None) -> torch.Tensor:
         """Decoder layer i on hidden states x [T, 896] at `positions` [T]. rope_rows = Rope.tables(positions),
         computed once per forward; computed here if not given."""
@@ -161,12 +140,11 @@ class Qwen2Model:
             q, k = apply_rope(q.view(T, Hq, d), cos, sin), apply_rope(k.view(T, Hkv, d), cos, sin)
             v = v.view(T, Hkv, d)
         if cache is None:
-            k_all, v_all, k_pos = k.transpose(0, 1), v.transpose(0, 1), positions
+            attn = attention(q, k.transpose(0, 1), v.transpose(0, 1), positions, positions, self.scale)
         else:
             cache.write(i, k, v)
-            k_all, v_all = cache.read(i)
-            k_pos = cache.positions()
-        x = x + F.linear(attention(q, k_all, v_all, positions, k_pos, self.scale), w.o_w)
+            attn = cache.attend(i, q, positions, self.scale)
+        x = x + F.linear(attn, w.o_w)
         h = rms_norm(x, w.post_norm, cfg.rms_norm_eps)
         if self.fused_matmuls:
             gate, up = F.linear(h, w.gate_up_w).chunk(2, dim=-1)
@@ -175,21 +153,22 @@ class Qwen2Model:
         return x + F.linear(F.silu(gate) * up, w.down_w)
 
     @torch.inference_mode()
-    def forward(self, input_ids: torch.Tensor, positions: torch.Tensor, cache: ContiguousKVCache | None = None,
-                last_only: bool = False) -> torch.Tensor:
+    def forward(self, input_ids: torch.Tensor, positions: torch.Tensor, cache: KVCache | None = None,
+                last_only: bool = False, meta: PagedMetadata | None = None) -> torch.Tensor:
         """Logits [T, vocab] (or [1, vocab] with last_only) in the model dtype for input_ids [T] at positions [T].
 
-        Without a cache, the T tokens attend only to each other (causally by position). With a cache, positions
-        must be cache.next_positions(T): their K/V are appended, and they attend to every cached position up to
-        their own. last_only skips the LM head for all but the final token: [T, 896] x [896, 151936] reads 272 MB of
+        Without a cache, the T tokens attend only to each other (causally by position). With a contiguous cache,
+        positions must be cache.next_positions(T): their K/V are appended, and they attend to every cached position
+        up to their own. With a paged cache, `meta` (build_metadata) describes one or more packed sequences, and
+        positions must be meta.positions; last_only then returns one row per sequence. last_only skips the LM head for all but the final token: [T, 896] x [896, 151936] reads 272 MB of
         weights either way, but the [T, 151936] output is 0.6 MB per token in fp32.
         """
         if cache is not None:
-            cache.advance(input_ids.shape[0])
+            cache.begin(input_ids.shape[0], meta)
         x = self.embed[input_ids]
         rope_rows = self.rope.tables(positions, x.dtype)
         for i in range(self.cfg.num_layers):
             x = self.layer_forward(i, x, positions, cache, rope_rows)
         if last_only:
-            x = x[-1:]
+            x = x[meta.last_token_indices] if meta is not None else x[-1:]
         return F.linear(rms_norm(x, self.final_norm, self.cfg.rms_norm_eps), self.lm_head)

@@ -49,6 +49,7 @@ bench/
   telemetry.py     # GPU (nvidia-smi) and host-CPU (Windows counters) sampling during a run
   profile_decode.py # torch.profiler breakdown of a batch-1 decode step (HF or this engine)
   cpu_probe.py     # CPU-only timing probe for host-side variance
+  paged_gather.py  # paged gather + attention vs contiguous attention, per layer
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter

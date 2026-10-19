@@ -6,11 +6,15 @@ attention wants. Phase 2 replaces this with fixed-size blocks.
 
 Bookkeeping lives on the CPU, so nothing here syncs with the GPU. New tokens always extend the sequence: callers get
 their positions from next_positions(n) (a view of a device-side arange, so no host-to-device copy either), and the
-forward pass calls advance(n) once before the layers write at [start, start + n).
+forward pass calls begin(n) once before the layers write at [start, start + n).
+
+Interface shared with the paged cache (engine/paged_cache.py), which is all the model uses: begin(n, meta) once per
+forward, then per layer write(layer, k, v) and attend(layer, q, positions, scale).
 """
 
 import torch
 
+from engine.attention import attention
 from engine.config import ModelConfig
 
 
@@ -41,6 +45,10 @@ class ContiguousKVCache:
             raise ValueError(f"{n} more tokens exceed cache capacity {self.max_len} (length {self.length})")
         self.start, self.length = self.length, self.length + n
 
+    def begin(self, n_tokens: int, meta: object = None) -> None:
+        """Start a forward over n_tokens new tokens (no metadata needed: they extend the one sequence)."""
+        self.advance(n_tokens)
+
     def write(self, layer: int, k: torch.Tensor, v: torch.Tensor) -> None:
         """Store this forward's k, v [n, H_kv, d] for one layer."""
         end = self.start + k.shape[0]
@@ -54,3 +62,8 @@ class ContiguousKVCache:
     def positions(self) -> torch.Tensor:
         """Absolute positions of the cached keys, [length]."""
         return self._arange[:self.length]
+
+    def attend(self, layer: int, q: torch.Tensor, positions: torch.Tensor, scale: float) -> torch.Tensor:
+        """Attention of this forward's queries q [T, Hq, d] over every cached position. Returns [T, Hq * d]."""
+        k, v = self.read(layer)
+        return attention(q, k, v, positions, self.positions(), scale)
