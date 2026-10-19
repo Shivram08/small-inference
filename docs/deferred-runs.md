@@ -23,6 +23,10 @@ When an item has run: record the result folder and the outcome in `docs/implemen
 | 4c | Triton decode-kernel sweep (Phase 3): context 128–8k × batch 1/8/32 × block 8/16/32, single pass and split-K, with figures | `.venv/bin/python -m bench.decode_sweep` | ~1–2 min | 1 core, GPU | Phase 3 gates "bandwidth-vs-context plot" and "split-K faster at batch 1, long context" |
 | 5 | **Comparison campaign**: HF and Phase 1 engine, burst + 3 rates, 3 shuffled reps, telemetry on | `.venv/bin/python -m bench.baseline --engines hf,contiguous --rates 0.0441,0.103,0.176` | **~8 h** (overnight) | 1 core, GPU at full power, ~2.5 GB GPU memory | Phase 1 "batch-1 TPOT vs HF"; a new HF baseline measured with the same code (Phase 0 numbers aren't comparable after the measurement change) |
 
+| 6 | **Phase 4 capacity + rate sweep**, continuous engine: burst → capacity → rate traces at 0.2–1.2× → runs | `.venv/bin/python -m bench.baseline --engines continuous --fractions 0.2,0.4,0.6,0.8,1.0,1.2 --reps 1` | ~20–30 min | 1 core, GPU, ~3 GB GPU memory; building the new rate traces parses the 640 MB ShareGPT JSON (several GB of RAM for a minute) | Phase 4 capacity; the rate traces for item 7 |
+| 7 | **Chunked vs unchunked prefill**, 3 shuffled reps on item 6's traces | `.venv/bin/python -m bench.baseline --engines continuous,continuous-nochunk --rates <item 6's rates>` | ~1–1.5 h | as item 6 (one shared model, two 1.5 GiB pools) | Phase 4 "p99 ITL with and without chunking" and "throughput and p99 TPOT vs rate" |
+| 8 | Phase 4 figures from items 6–7 (and item 5 for HF / Phase 1 on their traces) | `.venv/bin/python -m bench.rate_plots results/<item 7 campaign>/manifest.json --out docs/figures/phase4` | seconds | 1 core | Phase 4 plots |
+
 Item 5's time: each rate trace lasts about n/λ of arrivals (100 / 0.0441 req/s ≈ 38 min at 0.3×), so one repetition of both engines is about 2.5 h plus cooldowns. To shorten it, run `--reps 1` first as a check (~2.7 h), then the full campaign.
 
 After item 5: rerun `bench/plots.py` on the new campaign, and compare TPOT, TTFT, and goodput per rate between the two engines.

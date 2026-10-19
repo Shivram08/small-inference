@@ -51,6 +51,7 @@ bench/
   cpu_probe.py     # CPU-only timing probe for host-side variance
   paged_gather.py  # paged gather + attention vs contiguous attention, per layer
   decode_sweep.py  # Triton decode kernel: bandwidth vs context x batch x block size, split-K
+  rate_plots.py    # throughput, p99 TPOT, p99 ITL vs offered rate from campaign manifests
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter

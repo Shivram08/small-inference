@@ -4,7 +4,8 @@ Per profiled step (medians over steps): wall time, GPU busy time (union of kerne
 launch API calls and their CPU time, time blocked in sync calls (the .item() copy waiting for the GPU), and the
 remainder (Python, nn.Module, and aten dispatch). Unprofiled steps are timed too, to show the profiler's overhead.
 
-Works with any batch-1 engine whose step() decodes one token (--engine hf or contiguous). Writes
+Works with any engine whose step() decodes one token for a single running request (--engine hf, contiguous,
+or continuous: batch 1 through the continuous engine, i.e. the Triton decode kernel at one sequence). Writes
 results/profile/<stamp>_<engine>/{summary.json, key_averages.txt, env.json}, plus trace.json.gz for Perfetto
 (gitignored). One model load and a few hundred decode steps: well under a minute.
 """
@@ -92,7 +93,7 @@ def median_row(rows: list[dict]) -> dict:
 def main() -> None:
     """Load the engine, prefill one trace prompt, time unprofiled decode steps, then profile a few more."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--engine", choices=["hf", "contiguous"], default="hf")
+    p.add_argument("--engine", choices=["hf", "contiguous", "continuous"], default="hf")
     p.add_argument("--trace", type=Path, default=Path("traces/sharegpt_n100_seed0_burst.jsonl"))
     p.add_argument("--request", type=int, default=0, help="index of the trace request whose prompt is used")
     p.add_argument("--warmup", type=int, default=20)
@@ -105,13 +106,9 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=False)
     env = {"static": static_env(args.trace), "gpu_before": gpu_snapshot()}
 
-    if args.engine == "hf":
-        from bench.engines.hf import MODEL, HFEngine
-        engine = HFEngine()
-    else:
-        from engine.engine import ContiguousEngine
-        from engine.loader import DEFAULT_MODEL as MODEL
-        engine = ContiguousEngine()
+    from bench.engines import load_engine
+    engine, config = load_engine(args.engine)
+    MODEL = config["model"]
     prompt = load_trace(args.trace)[args.request].prompt_ids
     total = 1 + args.warmup + args.unprofiled + args.profiled
     engine.add_request(0, prompt, total)

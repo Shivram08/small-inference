@@ -67,9 +67,11 @@ def round_sig(x: float, digits: int = 3) -> float:
 def main() -> None:
     """Run the whole campaign with every engine loaded once."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--engines", default="hf", help="comma-separated: hf, contiguous")
+    p.add_argument("--engines", default="hf", help="comma-separated: hf, contiguous, continuous, continuous-nochunk")
     p.add_argument("--rates", default=None,
                    help="comma-separated req/s of existing rate traces (skips the capacity run), e.g. 0.0441,0.103,0.176")
+    p.add_argument("--fractions", default=",".join(map(str, FRACTIONS)),
+                   help="capacity fractions for the rate traces when --rates is not given, e.g. 0.2,0.4,0.6,0.8,1.0,1.2")
     p.add_argument("--reps", type=int, default=3)
     p.add_argument("--traces", type=Path, default=Path("traces"))
     p.add_argument("--results-root", type=Path, default=Path("results"))
@@ -88,7 +90,8 @@ def main() -> None:
     campaign = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_{'_'.join(names)}_campaign"
     campaign.mkdir(parents=True, exist_ok=False)
     target_c = args.cool_to if args.cool_to is not None else (idle_c + args.cool_tol if idle_c is not None else None)
-    manifest = {"engines": names, "n": N, "seed": SEED, "fractions": FRACTIONS, "order_seed": args.order_seed,
+    fractions = [float(f) for f in args.fractions.split(",")]
+    manifest = {"engines": names, "n": N, "seed": SEED, "fractions": fractions, "order_seed": args.order_seed,
                 "idle_gpu_c": idle_c, "cool_target_c": target_c, "runs": []}
 
     def replay(name: str, trace: Path, rep: int) -> dict:
@@ -112,7 +115,7 @@ def main() -> None:
     already_run: tuple = ()
     if args.rates is None:
         capacity = replay(names[0], burst, rep=1)["achieved_rate_req_s"]
-        rates = [round_sig(f * capacity) for f in FRACTIONS]
+        rates = [round_sig(f * capacity) for f in fractions]
         manifest["capacity_req_s"] = capacity
         already_run = ((names[0], burst),)
         print(f"capacity {capacity:.4f} req/s -> rates {rates}", flush=True)

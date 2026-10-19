@@ -33,6 +33,9 @@ Two or three lines per phase: what was chosen, what was tried and failed, and wh
 
 ## Phase 4: Continuous batching scheduler
 
+- One state per request (`known` tokens, `num_computed`) makes prefill, decode, chunked prefill, and recompute the same operation, so preemption is just "free the blocks, set num_computed to 0, requeue at the front"; the recompute covers prompt + generated tokens and then sampling continues. Decodes are scheduled first, then partial prefills, then FIFO admissions, under a token budget (Sarathi-Serve).
+- Admission reserves the whole remaining prefill's blocks. The first version reserved chunk by chunk, which can deadlock two half-prefilled requests on the same free blocks; reserving up front means only decodes grow sequences, which is where preemption lives. Batch invariance holds on greedy tokens in fp32 (not on logit bits: batching changes every matmul's M, and the decode kernel's split count depends on the batch).
+
 ## Phase 5: INT8 KV cache
 
 ## Phase 6: Benchmark vs. vLLM and write-up

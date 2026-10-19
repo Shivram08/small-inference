@@ -116,13 +116,14 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 4: Continuous batching scheduler
 
-- [ ] Request states (waiting, running, preempted, finished)
-- [ ] Flat packed batch with `cu_seqlens`
-- [ ] Admission with a watermark. **Gate:** invariant 6
-- [ ] Recompute preemption. **Gate:** invariant 7
-- [ ] Chunked prefill with a token budget. Compare p99 ITL with and without chunking
-- [ ] Throughput and p99 TPOT vs. rate plots
-- [ ] (Stretch) CUDA graphs, measured separately
+- [x] Request states (waiting, running, preempted, finished) and the scheduler (`engine/scheduler.py`). One rule for prefill, decode, chunked prefill, and recompute: a request holds `known` tokens (prompt + generated) and `num_computed`; a step computes some of `known[num_computed:]` and samples when they are all computed
+- [x] Flat packed batch with `cu_seqlens` (Phase 2's `build_metadata`, `query_starts`), one forward per step (`engine/continuous.py`, `ContinuousEngine`, one `.tolist()` sync per step)
+- [x] Admission with a watermark: FIFO, preempted requests first, reserves the whole remaining prefill's blocks plus a watermark (waived when nothing is running). Reserving per chunk instead let two half-prefilled requests deadlock on the same free blocks (found in review, before testing). **Gate (invariant 6):** `tests/test_scheduler.py` (tiny fp64: 5 configs × 2 arrival patterns × 2 seeds, plus 12 randomized stress runs with bookkeeping checked every step) and `tests/test_continuous_hf.py` (Qwen2.5-0.5B fp32 with the Triton backend: 8 requests of 1–250-token prompts, identical tokens alone and in 3 mixes, and alone equals Phase 1)
+- [x] Recompute preemption (newest running request first, possibly the one that needs the block). **Gate (invariant 7):** tiny fp64 pools exactly one request large (victims 1–9 tokens into decoding), and on Qwen2.5-0.5B fp32 an 8-block pool with 4 preemptions of requests up to 48 tokens into decoding; outputs unchanged, no leaked blocks
+- [x] Chunked prefill with a token budget (decodes first, then partial prefills, then admissions; `chunked_prefill=False` runs whole prefills, alone if longer than the budget). Gate: budget, sequence-limit, and decode-first checks on every plan; first token only after the last chunk
+- [~] Compare p99 ITL with and without chunking: engines `continuous` (512-token budget) and `continuous-nochunk` (2,048) in `bench.engines.load_engine`, sharing one model. Pending: item 7 in `docs/deferred-runs.md`
+- [~] Throughput and p99 TPOT vs rate plots (`bench/rate_plots.py`: throughput, p99 TPOT, p99 ITL vs offered rate, from raw logs; checked on the Phase 0 HF campaign). `bench/baseline.py --fractions` sets more rate points. Pending: items 6–8
+- [ ] (Stretch) CUDA graphs, measured separately. Batch-1 launch count is now 795 per decode step (continuous engine, Triton decode) vs 905 (Phase 1) and 1008 (HF)
 
 ## Phase 5: INT8 KV cache
 

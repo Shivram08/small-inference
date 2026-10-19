@@ -182,7 +182,8 @@ def main() -> None:
     """CLI: replay a trace against the fake, HF, or Phase 1 contiguous-cache engine."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--trace", type=Path, required=True)
-    p.add_argument("--engine", choices=["fake", "hf", "contiguous"], default="fake")
+    p.add_argument("--engine", choices=["fake", "hf", "contiguous", "continuous", "continuous-nochunk"],
+                   default="fake")
     p.add_argument("--a", type=float, default=1e-4, help="fake: prefill seconds per prompt token")
     p.add_argument("--b", type=float, default=5e-3, help="fake: seconds per decode step")
     p.add_argument("--results-root", type=Path, default=Path("results"))
