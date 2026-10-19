@@ -95,9 +95,11 @@ def test_bf16_error_is_output_rounding():
 
 
 def test_choose_splits():
-    """Batch 1 long context splits widely; big batches and short contexts don't split."""
+    """The measured policy: split only for small grids (<= 8 programs) at long contexts (>= 3,072 tokens)."""
     assert choose_splits(1, 2, 4096) == 16
-    assert choose_splits(1, 2, 300) == 2
-    assert choose_splits(1, 2, 100) == 1
+    assert choose_splits(1, 2, 8192) == 20
+    assert choose_splits(4, 2, 4096) == 5
+    assert choose_splits(1, 2, 2048) == 1  # split-K measured 1.26x slower here
+    assert choose_splits(1, 2, 300) == 1
+    assert choose_splits(8, 2, 8192) == 1  # 16 programs: never helped
     assert choose_splits(32, 2, 4096) == 1
-    assert choose_splits(8, 2, 4096) == 3

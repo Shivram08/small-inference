@@ -37,7 +37,13 @@ import triton.language as tl
 
 TILE = 64  # tokens per inner-loop iteration
 TARGET_PROGRAMS = 40  # about 2 per SM on the 20-SM RTX 3050 Laptop
-MIN_SPLIT_TOKENS = 256  # below this a split's fixed cost outweighs the parallelism
+MIN_SPLIT_TOKENS = 256  # smallest split
+# Measured (results/decode_sweep/20261019-1853*, 0.5B, block 16, 3 runs): a split call costs ~80 µs against ~43 µs for
+# a single pass (one more launch, the combine, three allocations), and single-pass time grows ~33 µs per 1k tokens at
+# <= 8 programs. Split-K lost at <= 2,048 tokens (1.11-1.87x slower at batch 1-4), won at 4,096 (0.58-0.65x) and
+# 8,192 (0.32-0.46x), and never helped at batch 8 (16 programs, already ~127 GB/s at 8k).
+SPLIT_MAX_PROGRAMS = 8  # batch <= 4 with 2 KV heads
+SPLIT_MIN_CONTEXT = 3072  # interpolated crossover between the measured 2,048 (loss) and 4,096 (win)
 
 
 @triton.jit
@@ -146,10 +152,12 @@ def _combine_kernel(part_ptr, m_ptr, l_ptr, o_ptr, n_splits,
 
 
 def choose_splits(num_seqs: int, num_kv_heads: int, max_context: int) -> int:
-    """Splits per sequence: enough programs to cover the SMs about twice, but no split under MIN_SPLIT_TOKENS.
-    Batch 1 at 4,096 tokens: 2 programs -> 16 splits of 256 tokens = 32 programs. Batch 32: 1 split."""
+    """Splits per sequence. Split only when the grid is too small to saturate bandwidth (<= 8 programs) and the
+    context is long enough that a single pass costs more than a split call's ~80 µs floor (>= 3,072 tokens); then aim
+    for about 40 programs with splits of at least 256 tokens. Batch 1 at 4,096 tokens: 16 splits; batch 1 at 2,048,
+    or batch 8 at any length: no split."""
     programs = num_seqs * num_kv_heads
-    if programs >= TARGET_PROGRAMS:
+    if programs > SPLIT_MAX_PROGRAMS or max_context < SPLIT_MIN_CONTEXT:
         return 1
     return max(1, min(math.ceil(TARGET_PROGRAMS / programs), math.ceil(max_context / MIN_SPLIT_TOKENS)))
 

@@ -13,9 +13,9 @@
   },
   "phase3_decode_sweep": {
     "kind": "decode_sweep",
-    "results": null,
+    "results": "results/decode_sweep/20261019-185431/results.json",
     "out": "docs/figures/phase3",
-    "pending": "deferred item 4c"
+    "note": "one of 3 runs (185340, 185423, 185431) that agree to ~1% at contexts >= 1k"
   },
   "phase4_rates": {
     "kind": "rates",
