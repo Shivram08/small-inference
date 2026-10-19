@@ -35,10 +35,12 @@ GPU_SAMPLE_FIELDS = [
 THROTTLE_COUNTERS = [f for f in GPU_SAMPLE_FIELDS if f.startswith("clocks_event_reasons_counters.")]
 # NVML clocks-event-reason bits. The SW power-cap and SW thermal counters also run while the GPU is idle (active mask
 # 0x24 at idle on this laptop), so counter increases overstate throttling; the per-sample mask restricted to busy
-# samples (idle bit clear) is the cleaner signal.
+# samples (idle bit clear) is the cleaner signal. Note that "gpu_idle" is the driver's judgment, not ours: during
+# launch-bound decode it can report idle and hold ~1,200 MHz (17 W) for tens of seconds before boosting to ~1,940 MHz.
 REASON_BITS = {"gpu_idle": 0x1, "applications_clocks_setting": 0x2, "sw_power_cap": 0x4, "hw_slowdown": 0x8,
                "sync_boost": 0x10, "sw_thermal_slowdown": 0x20, "hw_thermal_slowdown": 0x40,
-               "hw_power_brake_slowdown": 0x80, "display_clock_setting": 0x100}
+               "hw_power_brake_slowdown": 0x80, "display_clock_setting": 0x100,
+               "reliability": 0x400}  # 0x400 identified 2026-10-19: active at full boost during decode
 CORE_CLASSES = ["P", "E", "LPE"]  # by nominal frequency rank, highest first
 POWERSHELL = "powershell.exe"
 _PS_COUNTERS = ("'\\Processor Information(*)\\Processor Frequency',"

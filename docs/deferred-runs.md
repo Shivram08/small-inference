@@ -45,3 +45,7 @@ After item 5: rerun `bench/plots.py` on the new campaign, and compare TPOT, TTFT
 
 | # | What | When | Result |
 |---|---|---|---|
+| 1 | Harness self-test | 2026-10-19 | 4 passed (35.7 s): M0.4 still valid with the new runner |
+| 2–3 | Decode-step profiles, 3 interleaved runs each, plus the continuous engine (`results/profile/20261019-18*`) | 2026-10-19 | Unprofiled step p50: HF 26.2 / 25.6 / 24.7 ms (1006 launches); contiguous 32.0 / 29.8 / 18.4 ms (903); continuous 17.7 / 27.3 / 18.9 ms (784). Bimodal: see the GPU DVFS row |
+| 4 | CPU probe, idle laptop (`results/cpu_probe/20261019-180631`) | 2026-10-19 | Unimodal: all 480 windows 0.8–1.1 ms, busiest core a P-core at ~4.2 GHz. The earlier bimodal probe was Balanced mode + laptop in use |
+| — | GPU DVFS probe: 90 s of contiguous decode with 0.5 s GPU / 1 s CPU telemetry (`results/gpu_dvfs_probe_20261019-180916`) | 2026-10-19 | **The bimodal TPOT is GPU clocks, not the CPU.** Slow mode: driver reports "GPU Idle", SM ~1,200 MHz, 17 W, step ~32 ms. Fast: SM ~1,940 MHz, 43 W, "Reliability" (0x400), step ~19.6 ms. CPU clocks were slightly *higher* in the slow mode. Launch-bound decode leaves gaps the governor reads as idle |

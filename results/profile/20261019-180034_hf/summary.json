@@ -1,0 +1,210 @@
+{
+  "engine": "hf",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "prompt_len": 110,
+  "warmup": 20,
+  "context_len_at_profile": 231,
+  "unprofiled_step_us": {
+    "p50": 26179.54650122556,
+    "min": 19674.17400010163,
+    "max": 49482.33499817434,
+    "n": 100
+  },
+  "profiled_step_median": {
+    "wall_us": 37911.859999999986,
+    "launch_calls": 1006.0,
+    "launch_api_us": 10468.053999999422,
+    "sync_us": 1591.9184999999707,
+    "n_kernels": 1008.0,
+    "gpu_busy_us": 8318.149499999796,
+    "other_cpu_us": 25847.115000000515
+  },
+  "profiled_steps": [
+    {
+      "wall_us": 49621.738000000005,
+      "launch_calls": 1006,
+      "launch_api_us": 11368.703000000012,
+      "sync_us": 654.0650000000023,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8324.424000000165,
+      "other_cpu_us": 37598.96999999999
+    },
+    {
+      "wall_us": 43452.687,
+      "launch_calls": 1006,
+      "launch_api_us": 12163.43500000026,
+      "sync_us": 1669.6499999999942,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8315.39000000005,
+      "other_cpu_us": 29619.601999999744
+    },
+    {
+      "wall_us": 33803.766,
+      "launch_calls": 1006,
+      "launch_api_us": 9213.885999999955,
+      "sync_us": 1601.143000000011,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8312.141000000032,
+      "other_cpu_us": 22988.737000000037
+    },
+    {
+      "wall_us": 40345.764999999985,
+      "launch_calls": 1006,
+      "launch_api_us": 10889.478999999847,
+      "sync_us": 1579.713000000047,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8316.957000000271,
+      "other_cpu_us": 27876.57300000009
+    },
+    {
+      "wall_us": 33632.292000000016,
+      "launch_calls": 1006,
+      "launch_api_us": 9165.020000000542,
+      "sync_us": 1598.4639999999781,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8320.370999998908,
+      "other_cpu_us": 22868.807999999495
+    },
+    {
+      "wall_us": 35075.813000000024,
+      "launch_calls": 1006,
+      "launch_api_us": 9948.105000000302,
+      "sync_us": 1591.29899999997,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8326.53800000003,
+      "other_cpu_us": 23536.408999999752
+    },
+    {
+      "wall_us": 38826.98999999996,
+      "launch_calls": 1006,
+      "launch_api_us": 10484.807999999466,
+      "sync_us": 1588.795999999973,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8318.408999999927,
+      "other_cpu_us": 26753.386000000522
+    },
+    {
+      "wall_us": 35073.05599999998,
+      "launch_calls": 1006,
+      "launch_api_us": 9577.84999999858,
+      "sync_us": 1594.8649999999325,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8314.632999999973,
+      "other_cpu_us": 23900.34100000147
+    },
+    {
+      "wall_us": 37383.85499999998,
+      "launch_calls": 1006,
+      "launch_api_us": 12294.389999999374,
+      "sync_us": 1582.1169999999693,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8312.28400000045,
+      "other_cpu_us": 23507.34800000064
+    },
+    {
+      "wall_us": 35450.456000000006,
+      "launch_calls": 1006,
+      "launch_api_us": 9865.605999999447,
+      "sync_us": 1592.6360000000568,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8315.706000000762,
+      "other_cpu_us": 23992.214000000502
+    },
+    {
+      "wall_us": 38175.77899999998,
+      "launch_calls": 1006,
+      "launch_api_us": 10407.28199999989,
+      "sync_us": 1575.4770000000717,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8310.354999999749,
+      "other_cpu_us": 26193.02000000002
+    },
+    {
+      "wall_us": 34745.475999999966,
+      "launch_calls": 1006,
+      "launch_api_us": 9626.748999999953,
+      "sync_us": 1597.591000000015,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8314.331999999122,
+      "other_cpu_us": 23521.136
+    },
+    {
+      "wall_us": 39389.735999999975,
+      "launch_calls": 1006,
+      "launch_api_us": 10975.882000000565,
+      "sync_us": 1592.3479999999981,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8316.938999999897,
+      "other_cpu_us": 26821.505999999412
+    },
+    {
+      "wall_us": 42190.13600000006,
+      "launch_calls": 1006,
+      "launch_api_us": 11563.332999999111,
+      "sync_us": 1585.01800000004,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8317.889999999665,
+      "other_cpu_us": 29041.785000000906
+    },
+    {
+      "wall_us": 34222.312000000034,
+      "launch_calls": 1006,
+      "launch_api_us": 9450.071000000578,
+      "sync_us": 1591.4889999999432,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8319.785000003525,
+      "other_cpu_us": 23180.751999999513
+    },
+    {
+      "wall_us": 33088.04599999997,
+      "launch_calls": 1006,
+      "launch_api_us": 9157.201000000234,
+      "sync_us": 1600.4579999999842,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8319.265000002342,
+      "other_cpu_us": 22330.386999999755
+    },
+    {
+      "wall_us": 42642.736999999965,
+      "launch_calls": 1006,
+      "launch_api_us": 13578.714000000851,
+      "sync_us": 1586.9220000000205,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8323.409999999567,
+      "other_cpu_us": 27477.100999999093
+    },
+    {
+      "wall_us": 37793.71299999999,
+      "launch_calls": 1006,
+      "launch_api_us": 10458.963000000105,
+      "sync_us": 1603.9810000000289,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8325.37699999928,
+      "other_cpu_us": 25730.768999999855
+    },
+    {
+      "wall_us": 49958.244000000064,
+      "launch_calls": 1006,
+      "launch_api_us": 14359.662000000477,
+      "sync_us": 1602.6260000000475,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8324.529999999213,
+      "other_cpu_us": 33995.95599999954
+    },
+    {
+      "wall_us": 38030.00699999998,
+      "launch_calls": 1006,
+      "launch_api_us": 10477.144999998738,
+      "sync_us": 1589.4010000000708,
+      "n_kernels": 1008,
+      "gpu_busy_us": 8327.55200000049,
+      "other_cpu_us": 25963.461000001174
+    }
+  ],
+  "fractions_of_profiled_wall": {
+    "gpu_busy_us": 0.21940758116325074,
+    "launch_api_us": 0.2761155480105546,
+    "sync_us": 0.0419899867745864,
+    "other_cpu_us": 0.6817685811247595
+  }
+}

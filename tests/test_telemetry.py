@@ -132,6 +132,6 @@ def test_live_samplers(tmp_path):
     assert t.procs == {}
     summary = json.loads((tmp_path / "telemetry.json").read_text())
     assert summary["notes"] == {}
-    assert summary["gpu"]["n_samples"] >= 5
+    assert summary["gpu"]["n_samples"] >= 3  # 0.5 s interval; nvidia-smi start-up takes ~1-2 s of the window
     assert summary["cpu"]["n_samples"] >= 2
     assert set(summary["cpu"]["effective_mhz_by_class"]) == {"P", "E", "LPE"}  # Core Ultra 7 155H

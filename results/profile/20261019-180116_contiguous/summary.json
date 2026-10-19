@@ -1,0 +1,210 @@
+{
+  "engine": "contiguous",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "prompt_len": 110,
+  "warmup": 20,
+  "context_len_at_profile": 231,
+  "unprofiled_step_us": {
+    "p50": 32006.643998101936,
+    "min": 18980.68599984981,
+    "max": 38026.7910004477,
+    "n": 100
+  },
+  "profiled_step_median": {
+    "wall_us": 38696.12700000004,
+    "launch_calls": 903.0,
+    "launch_api_us": 11410.863000000129,
+    "sync_us": 1625.9180000000342,
+    "n_kernels": 905.0,
+    "gpu_busy_us": 8794.257999999594,
+    "other_cpu_us": 25760.964500000453
+  },
+  "profiled_steps": [
+    {
+      "wall_us": 54834.636,
+      "launch_calls": 903,
+      "launch_api_us": 16100.033999999985,
+      "sync_us": 1602.6800000000003,
+      "n_kernels": 905,
+      "gpu_busy_us": 8885.359000000097,
+      "other_cpu_us": 37131.92200000001
+    },
+    {
+      "wall_us": 57406.806,
+      "launch_calls": 903,
+      "launch_api_us": 17677.69400000006,
+      "sync_us": 1635.9609999999811,
+      "n_kernels": 905,
+      "gpu_busy_us": 8687.603000000148,
+      "other_cpu_us": 38093.150999999954
+    },
+    {
+      "wall_us": 37389.648000000016,
+      "launch_calls": 903,
+      "launch_api_us": 10912.90899999981,
+      "sync_us": 1626.2359999999753,
+      "n_kernels": 905,
+      "gpu_busy_us": 8870.537000000244,
+      "other_cpu_us": 24850.50300000023
+    },
+    {
+      "wall_us": 56016.182,
+      "launch_calls": 903,
+      "launch_api_us": 17925.710999999894,
+      "sync_us": 1651.8310000000056,
+      "n_kernels": 905,
+      "gpu_busy_us": 8717.574000000604,
+      "other_cpu_us": 36438.6400000001
+    },
+    {
+      "wall_us": 43060.65599999999,
+      "launch_calls": 903,
+      "launch_api_us": 13015.339000000007,
+      "sync_us": 1605.4340000000084,
+      "n_kernels": 905,
+      "gpu_busy_us": 8863.214000000095,
+      "other_cpu_us": 28439.882999999973
+    },
+    {
+      "wall_us": 29229.87300000002,
+      "launch_calls": 903,
+      "launch_api_us": 8260.367999999376,
+      "sync_us": 1624.966000000015,
+      "n_kernels": 905,
+      "gpu_busy_us": 8713.98399999959,
+      "other_cpu_us": 19344.53900000063
+    },
+    {
+      "wall_us": 43017.77999999997,
+      "launch_calls": 903,
+      "launch_api_us": 13390.375999999465,
+      "sync_us": 1631.7360000000917,
+      "n_kernels": 905,
+      "gpu_busy_us": 8871.275000000198,
+      "other_cpu_us": 27995.668000000413
+    },
+    {
+      "wall_us": 34843.00699999998,
+      "launch_calls": 903,
+      "launch_api_us": 10199.655000000901,
+      "sync_us": 1603.2940000000526,
+      "n_kernels": 905,
+      "gpu_busy_us": 8724.367000000202,
+      "other_cpu_us": 23040.05799999903
+    },
+    {
+      "wall_us": 49703.01699999999,
+      "launch_calls": 903,
+      "launch_api_us": 16912.269999999786,
+      "sync_us": 1506.5069999999832,
+      "n_kernels": 905,
+      "gpu_busy_us": 8875.031999999366,
+      "other_cpu_us": 31284.240000000224
+    },
+    {
+      "wall_us": 41530.74799999996,
+      "launch_calls": 903,
+      "launch_api_us": 12389.656999999599,
+      "sync_us": 1617.6299999999464,
+      "n_kernels": 905,
+      "gpu_busy_us": 8679.798000000068,
+      "other_cpu_us": 27523.461000000418
+    },
+    {
+      "wall_us": 32420.27000000002,
+      "launch_calls": 903,
+      "launch_api_us": 8866.015000000945,
+      "sync_us": 1595.417999999947,
+      "n_kernels": 905,
+      "gpu_busy_us": 8879.266999999818,
+      "other_cpu_us": 21958.836999999126
+    },
+    {
+      "wall_us": 50495.28800000006,
+      "launch_calls": 903,
+      "launch_api_us": 15913.601999999548,
+      "sync_us": 1636.3629999998957,
+      "n_kernels": 905,
+      "gpu_busy_us": 8722.213000000746,
+      "other_cpu_us": 32945.323000000615
+    },
+    {
+      "wall_us": 37798.63899999997,
+      "launch_calls": 903,
+      "launch_api_us": 11534.053000000771,
+      "sync_us": 1642.1149999999907,
+      "n_kernels": 905,
+      "gpu_busy_us": 8879.030000000494,
+      "other_cpu_us": 24622.470999999205
+    },
+    {
+      "wall_us": 49756.5290000001,
+      "launch_calls": 903,
+      "launch_api_us": 15382.215999999433,
+      "sync_us": 1639.6000000000931,
+      "n_kernels": 905,
+      "gpu_busy_us": 8716.73800000141,
+      "other_cpu_us": 32734.71300000057
+    },
+    {
+      "wall_us": 33956.06400000001,
+      "launch_calls": 903,
+      "launch_api_us": 10235.709000000614,
+      "sync_us": 1625.6000000000931,
+      "n_kernels": 905,
+      "gpu_busy_us": 8870.546000001254,
+      "other_cpu_us": 22094.754999999306
+    },
+    {
+      "wall_us": 28551.810000000056,
+      "launch_calls": 903,
+      "launch_api_us": 8119.38300000038,
+      "sync_us": 1621.2399999998743,
+      "n_kernels": 905,
+      "gpu_busy_us": 8719.946000001044,
+      "other_cpu_us": 18811.1869999998
+    },
+    {
+      "wall_us": 31872.0,
+      "launch_calls": 903,
+      "launch_api_us": 9357.839999999036,
+      "sync_us": 1627.765000000014,
+      "n_kernels": 905,
+      "gpu_busy_us": 8875.438000001828,
+      "other_cpu_us": 20886.39500000095
+    },
+    {
+      "wall_us": 39593.61500000011,
+      "launch_calls": 903,
+      "launch_api_us": 11287.672999999486,
+      "sync_us": 1634.515999999945,
+      "n_kernels": 905,
+      "gpu_busy_us": 8681.934000001405,
+      "other_cpu_us": 26671.426000000676
+    },
+    {
+      "wall_us": 35003.06700000004,
+      "launch_calls": 903,
+      "launch_api_us": 10288.700000001118,
+      "sync_us": 1606.9259999998612,
+      "n_kernels": 905,
+      "gpu_busy_us": 8875.440000000875,
+      "other_cpu_us": 23107.44099999906
+    },
+    {
+      "wall_us": 29148.41399999999,
+      "launch_calls": 903,
+      "launch_api_us": 8192.050999997999,
+      "sync_us": 1630.170999999973,
+      "n_kernels": 905,
+      "gpu_busy_us": 8725.301999999094,
+      "other_cpu_us": 19326.192000002018
+    }
+  ],
+  "fractions_of_profiled_wall": {
+    "gpu_busy_us": 0.22726455285821204,
+    "launch_api_us": 0.2948838523297207,
+    "sync_us": 0.04201759002910117,
+    "other_cpu_us": 0.66572462148474
+  }
+}

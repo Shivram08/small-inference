@@ -1,0 +1,210 @@
+{
+  "engine": "continuous",
+  "model": "Qwen/Qwen2.5-0.5B-Instruct",
+  "prompt_len": 110,
+  "warmup": 20,
+  "context_len_at_profile": 231,
+  "unprofiled_step_us": {
+    "p50": 18900.828497862676,
+    "min": 16052.48399937409,
+    "max": 39855.261999036884,
+    "n": 100
+  },
+  "profiled_step_median": {
+    "wall_us": 35344.69600000001,
+    "launch_calls": 784.0,
+    "launch_api_us": 10493.741000000591,
+    "sync_us": 1878.9805000001797,
+    "n_kernels": 795.0,
+    "gpu_busy_us": 7748.73850000152,
+    "other_cpu_us": 23173.63899999931
+  },
+  "profiled_steps": [
+    {
+      "wall_us": 47773.348999999995,
+      "launch_calls": 784,
+      "launch_api_us": 13766.40300000001,
+      "sync_us": 1968.263000000003,
+      "n_kernels": 795,
+      "gpu_busy_us": 7763.331999999969,
+      "other_cpu_us": 32038.68299999998
+    },
+    {
+      "wall_us": 34363.579000000005,
+      "launch_calls": 784,
+      "launch_api_us": 10450.217999999993,
+      "sync_us": 1925.9900000000198,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.211000000083,
+      "other_cpu_us": 21987.370999999992
+    },
+    {
+      "wall_us": 43309.883,
+      "launch_calls": 784,
+      "launch_api_us": 12996.091999999684,
+      "sync_us": 1876.580999999962,
+      "n_kernels": 795,
+      "gpu_busy_us": 7746.597999999911,
+      "other_cpu_us": 28437.210000000356
+    },
+    {
+      "wall_us": 33192.357,
+      "launch_calls": 784,
+      "launch_api_us": 9641.81300000046,
+      "sync_us": 1868.9980000000505,
+      "n_kernels": 795,
+      "gpu_busy_us": 7742.462000000334,
+      "other_cpu_us": 21681.545999999493
+    },
+    {
+      "wall_us": 34676.926999999996,
+      "launch_calls": 784,
+      "launch_api_us": 10070.556000000448,
+      "sync_us": 1863.277999999933,
+      "n_kernels": 795,
+      "gpu_busy_us": 7750.655000000115,
+      "other_cpu_us": 22743.092999999615
+    },
+    {
+      "wall_us": 29219.83599999998,
+      "launch_calls": 784,
+      "launch_api_us": 8329.936000000453,
+      "sync_us": 1860.2149999999965,
+      "n_kernels": 795,
+      "gpu_busy_us": 7747.114999999991,
+      "other_cpu_us": 19029.684999999532
+    },
+    {
+      "wall_us": 46063.94400000002,
+      "launch_calls": 784,
+      "launch_api_us": 14551.974000000191,
+      "sync_us": 1855.5829999999842,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.066999999777,
+      "other_cpu_us": 29656.386999999842
+    },
+    {
+      "wall_us": 31534.15299999999,
+      "launch_calls": 784,
+      "launch_api_us": 9068.728000000003,
+      "sync_us": 1810.541000000143,
+      "n_kernels": 795,
+      "gpu_busy_us": 7749.826000000408,
+      "other_cpu_us": 20654.883999999845
+    },
+    {
+      "wall_us": 47371.27000000002,
+      "launch_calls": 784,
+      "launch_api_us": 13568.740999999514,
+      "sync_us": 2777.3640000000014,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.493000000657,
+      "other_cpu_us": 31025.165000000503
+    },
+    {
+      "wall_us": 30463.00199999998,
+      "launch_calls": 784,
+      "launch_api_us": 8104.693000000843,
+      "sync_us": 1970.0740000000224,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.763000000443,
+      "other_cpu_us": 20388.234999999113
+    },
+    {
+      "wall_us": 55438.69,
+      "launch_calls": 784,
+      "launch_api_us": 16148.357000000251,
+      "sync_us": 1924.9169999998994,
+      "n_kernels": 795,
+      "gpu_busy_us": 7742.965999999724,
+      "other_cpu_us": 37365.41599999985
+    },
+    {
+      "wall_us": 36012.465000000026,
+      "launch_calls": 784,
+      "launch_api_us": 10537.264000001189,
+      "sync_us": 1871.0159999998286,
+      "n_kernels": 795,
+      "gpu_busy_us": 7749.110000000161,
+      "other_cpu_us": 23604.184999999008
+    },
+    {
+      "wall_us": 39546.34600000002,
+      "launch_calls": 784,
+      "launch_api_us": 12054.683999999892,
+      "sync_us": 1886.7609999999404,
+      "n_kernels": 795,
+      "gpu_busy_us": 7749.126000000106,
+      "other_cpu_us": 25604.901000000187
+    },
+    {
+      "wall_us": 34238.14500000002,
+      "launch_calls": 784,
+      "launch_api_us": 10275.119000001345,
+      "sync_us": 1841.5619999999763,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.950000000943,
+      "other_cpu_us": 22121.463999998698
+    },
+    {
+      "wall_us": 36235.38900000008,
+      "launch_calls": 784,
+      "launch_api_us": 10774.409000001266,
+      "sync_us": 1853.6999999999534,
+      "n_kernels": 795,
+      "gpu_busy_us": 7746.902000000933,
+      "other_cpu_us": 23607.279999998864
+    },
+    {
+      "wall_us": 31467.300000000047,
+      "launch_calls": 784,
+      "launch_api_us": 8796.942000000854,
+      "sync_us": 2022.2089999997988,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.7140000025975,
+      "other_cpu_us": 20648.148999999394
+    },
+    {
+      "wall_us": 30005.214000000036,
+      "launch_calls": 784,
+      "launch_api_us": 8650.22400000121,
+      "sync_us": 1883.7219999998342,
+      "n_kernels": 795,
+      "gpu_busy_us": 7745.653999999748,
+      "other_cpu_us": 19471.267999998992
+    },
+    {
+      "wall_us": 51245.785999999964,
+      "launch_calls": 784,
+      "launch_api_us": 17050.791999998968,
+      "sync_us": 1878.0239999999758,
+      "n_kernels": 795,
+      "gpu_busy_us": 7750.723000000464,
+      "other_cpu_us": 32316.97000000102
+    },
+    {
+      "wall_us": 40805.201,
+      "launch_calls": 784,
+      "launch_api_us": 12068.123999998206,
+      "sync_us": 1888.8890000001993,
+      "n_kernels": 795,
+      "gpu_busy_us": 7750.676000001142,
+      "other_cpu_us": 26848.188000001595
+    },
+    {
+      "wall_us": 27040.85600000003,
+      "launch_calls": 784,
+      "launch_api_us": 7368.020999998436,
+      "sync_us": 1879.9370000003837,
+      "n_kernels": 795,
+      "gpu_busy_us": 7748.884999997565,
+      "other_cpu_us": 17792.89800000121
+    }
+  ],
+  "fractions_of_profiled_wall": {
+    "gpu_busy_us": 0.21923341765343002,
+    "launch_api_us": 0.2968971921558071,
+    "sync_us": 0.05316159742893754,
+    "other_cpu_us": 0.655646861413076
+  }
+}
