@@ -1,4 +1,4 @@
-"""Environment record for a run folder: software versions, git state, trace hash, and nvidia-smi snapshots."""
+"""Environment record for a run folder: software versions, git state, trace hash, and GPU / CPU / memory snapshots."""
 
 import hashlib
 import importlib.metadata
@@ -45,6 +45,29 @@ def gpu_snapshot() -> dict:
     values = [v.strip() for v in csv.strip().splitlines()[0].split(",")]
     snap["query"] = dict(zip(GPU_FIELDS, values))
     snap["performance_text"] = _run(["nvidia-smi", "-q", "-d", "PERFORMANCE"])
+    return snap
+
+
+def gpu_temperature() -> float | None:
+    """Current GPU temperature in °C, or None if nvidia-smi is unavailable."""
+    out = _run(["nvidia-smi", "--query-gpu=temperature.gpu", "--format=csv,noheader,nounits"])
+    try:
+        return float(out.strip().splitlines()[0]) if out else None
+    except ValueError:
+        return None
+
+
+def mem_snapshot() -> dict:
+    """WSL memory and swap from /proc/meminfo, in MiB. WSL gets about 7.4 GiB of the laptop's 16 GB."""
+    fields = {"MemTotal", "MemAvailable", "SwapTotal", "SwapFree"}
+    snap = {}
+    try:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            key, value = line.split(":", 1)
+            if key in fields:
+                snap[f"{key}_mib"] = int(value.split()[0]) // 1024
+    except OSError as e:
+        snap["error"] = str(e)
     return snap
 
 

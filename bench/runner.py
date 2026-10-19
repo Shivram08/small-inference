@@ -8,14 +8,17 @@ step() returns, which by the Engine contract is after the sampled tokens reach t
 import argparse
 import bisect
 import json
+import resource
 import time
+from contextlib import nullcontext
 from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
 
 from bench.engines.base import Engine
 from bench.engines.fake import wait_until
-from bench.env import gpu_snapshot, static_env
+from bench.env import gpu_snapshot, mem_snapshot, static_env
+from bench.telemetry import Telemetry, cpu_snapshot
 
 WARMUP_OUTPUT_LEN = 8
 MAX_CONSECUTIVE_EMPTY_STEPS = 100_000
@@ -132,8 +135,12 @@ def write_jsonl(path: Path, rows: list) -> None:
 
 
 def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict | None = None,
-        results_root: Path = Path("results"), warmup: int = 2) -> Path:
-    """Warm up, replay the trace, and write requests.jsonl, steps.jsonl, env.json, run.json to a new folder."""
+        results_root: Path = Path("results"), warmup: int = 2, telemetry: bool = False) -> Path:
+    """Warm up, replay the trace, and write requests.jsonl, steps.jsonl, env.json, run.json to a new folder.
+
+    `telemetry=True` also samples GPU and host CPU during the replay (bench/telemetry.py) and snapshots host CPU
+    clocks before and after. It is off by default so harness tests don't depend on nvidia-smi or Windows interop.
+    """
     trace_path = Path(trace_path)
     reqs = load_trace(trace_path)
     run_dir = Path(results_root) / f"{datetime.now():%Y%m%d-%H%M%S}_{engine_name}_{trace_path.stem}"
@@ -141,11 +148,18 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
 
     env = {"static": static_env(trace_path)}
     warm_up(engine, reqs, warmup)
+    if telemetry:
+        env["cpu_before"] = cpu_snapshot()
+    env["mem_before"] = mem_snapshot()
     env["gpu_before"] = gpu_snapshot()
-    wall_start = time.time()
-    records, steps = replay(engine, reqs)
-    wall_end = time.time()
+    with Telemetry(run_dir) if telemetry else nullcontext():
+        wall_start = time.time()
+        records, steps = replay(engine, reqs)
+        wall_end = time.time()
     env["gpu_after"] = gpu_snapshot()
+    env["mem_after"] = mem_snapshot()
+    if telemetry:
+        env["cpu_after"] = cpu_snapshot()
 
     write_jsonl(run_dir / "requests.jsonl", records)
     write_jsonl(run_dir / "steps.jsonl", steps)
@@ -158,6 +172,8 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
         "warmup_requests": warmup,
         "wall_start_unix": wall_start,
         "wall_end_unix": wall_end,
+        "telemetry": telemetry,
+        "peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024,  # whole process, incl. model load
     }, indent=2))
     return run_dir
 
@@ -171,6 +187,7 @@ def main() -> None:
     p.add_argument("--b", type=float, default=5e-3, help="fake: seconds per decode step")
     p.add_argument("--results-root", type=Path, default=Path("results"))
     p.add_argument("--warmup", type=int, default=2)
+    p.add_argument("--telemetry", action="store_true", help="sample GPU and host CPU during the replay")
     args = p.parse_args()
 
     if args.engine == "hf":
@@ -179,7 +196,7 @@ def main() -> None:
     else:
         from bench.engines.fake import FakeEngine
         engine, config = FakeEngine(a=args.a, b=args.b), {"a": args.a, "b": args.b}
-    run_dir = run(engine, args.trace, args.engine, config, args.results_root, args.warmup)
+    run_dir = run(engine, args.trace, args.engine, config, args.results_root, args.warmup, args.telemetry)
     print(run_dir)
 
 

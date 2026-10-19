@@ -20,7 +20,7 @@ The point is understanding, not just a working engine. Every component should be
   - Memory bandwidth: 168 GB/s theoretical (96-bit GDDR6 at 14 Gbps). **Measured 156 GB/s** (`results/roofline/20261011-*`). Use the measured value for all analysis.
   - Measured bf16 matmul peak: 18.7 TFLOP/s, so the ridge point is about 120 FLOP/B.
 - **OS:** Linux or WSL2. Triton and vLLM target Linux.
-- **Laptop benchmarking rules:** run plugged in, in the highest power mode. Warm up before timing. Report at least 3 repetitions as mean and spread. Check throttle reasons (`nvidia-smi -q -d PERFORMANCE`) before and after each run.
+- **Laptop benchmarking rules:** run plugged in, in the highest power mode (Balanced caps the GPU at 30 W instead of 75 W; an HF decode step took 47 ms in Balanced vs 24–31 ms in Phase 0). Warm up before timing. Report at least 3 repetitions as mean and spread. Check throttle reasons (`nvidia-smi -q -d PERFORMANCE`) before and after each run.
 
 ## Models
 
@@ -46,6 +46,9 @@ bench/
   runner.py        # open-loop trace replay against an engine
   metrics.py       # raw timestamps -> summary metrics
   roofline.py      # bandwidth, matmul peak, decode-shaped sweep, launch overhead
+  telemetry.py     # GPU (nvidia-smi) and host-CPU (Windows counters) sampling during a run
+  profile_hf.py    # torch.profiler breakdown of one HF decode step
+  cpu_probe.py     # CPU-only timing probe for host-side variance
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter
@@ -115,7 +118,7 @@ All timings use `torch.cuda.Event`, after warmup, as the median of ~20 repetitio
 - **Launch overhead:** 1000 tiny kernels with one sync at the end, giving per-launch µs. Multiply by the kernel count per decode step (from the PyTorch profiler).
 
 ### Environment record
-Every run folder gets `env.json` with the GPU, driver, CUDA, torch, git commit, trace hash, and `nvidia-smi` clocks, temperature, power, and throttle reasons before and after.
+Every run folder gets `env.json` with the GPU, driver, CUDA, torch, git commit, trace hash, and `nvidia-smi` clocks, temperature, power, and throttle reasons before and after, plus WSL memory. Campaign runs also get host CPU clocks before and after, and `telemetry.json` from GPU (1 s) and CPU (2 s) sampling during the run. Throttle counters run while the GPU is idle, so judge throttling by the active-reason mask over busy samples.
 
 ### Harness self-test (`bench/engines/fake.py`)
 The fake engine sleeps a·P for prefill and b per decode step. Tests must verify three things:
