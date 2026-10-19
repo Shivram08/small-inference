@@ -20,6 +20,7 @@ When an item has run: record the result folder and the outcome in `docs/implemen
 | 3 | Decode-step profile, Phase 1 engine | `.venv/bin/python -m bench.profile_decode --engine contiguous` | < 1 min | 1 core, GPU | Same breakdown for 905 launches/step |
 | 4 | CPU probe, laptop idle | `.venv/bin/python -m bench.cpu_probe --duration 120` | 2 min | 1 core | Tests the P/E-core vs P-core-clock explanation of bimodal TPOT |
 | 4b | Paged-gather cost vs contiguous attention (Phase 2) | `.venv/bin/python -m bench.paged_gather` | < 1 min | 1 core, GPU | Phase 2 "measure the gather cost"; the baseline the Phase 3 kernel must beat |
+| 4c | Triton decode-kernel sweep (Phase 3): context 128–8k × batch 1/8/32 × block 8/16/32, single pass and split-K, with figures | `.venv/bin/python -m bench.decode_sweep` | ~1–2 min | 1 core, GPU | Phase 3 gates "bandwidth-vs-context plot" and "split-K faster at batch 1, long context" |
 | 5 | **Comparison campaign**: HF and Phase 1 engine, burst + 3 rates, 3 shuffled reps, telemetry on | `.venv/bin/python -m bench.baseline --engines hf,contiguous --rates 0.0441,0.103,0.176` | **~8 h** (overnight) | 1 core, GPU at full power, ~2.5 GB GPU memory | Phase 1 "batch-1 TPOT vs HF"; a new HF baseline measured with the same code (Phase 0 numbers aren't comparable after the measurement change) |
 
 Item 5's time: each rate trace lasts about n/λ of arrivals (100 / 0.0441 req/s ≈ 38 min at 0.3×), so one repetition of both engines is about 2.5 h plus cooldowns. To shorten it, run `--reps 1` first as a check (~2.7 h), then the full campaign.

@@ -41,7 +41,7 @@ def greedy_generate(model: Qwen2Model, prompt_ids: list[int], n: int, use_cache:
 @torch.inference_mode()
 def greedy_generate_paged(model: Qwen2Model, prompt_ids: list[int], n: int, manager: BlockManager | None = None,
                           cache: PagedKVCache | None = None, seq_id: int = 0, block_size: int = 16,
-                          prefill_chunk: int | None = None) -> list[int]:
+                          prefill_chunk: int | None = None, attn_backend: str = "gather") -> list[int]:
     """The n greedy tokens after prompt_ids, through the paged cache.
 
     Pass a manager and cache to run inside an existing (e.g. fragmented) pool; otherwise a pool just big enough is
@@ -52,7 +52,7 @@ def greedy_generate_paged(model: Qwen2Model, prompt_ids: list[int], n: int, mana
         raise ValueError("need a non-empty prompt and n >= 1")
     if manager is None:
         manager = BlockManager(-(-(len(prompt_ids) + n) // block_size), block_size)
-        cache = PagedKVCache(model.cfg, manager.num_blocks, block_size, model.device, model.dtype)
+        cache = PagedKVCache(model.cfg, manager.num_blocks, block_size, model.device, model.dtype, attn_backend)
     dev = model.device
     manager.allocate(seq_id, 0)
     try:

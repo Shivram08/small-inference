@@ -28,6 +28,9 @@ Two or three lines per phase: what was chosen, what was tried and failed, and wh
 
 ## Phase 3: Triton paged-attention decode
 
+- One program per (sequence, KV head) handles the whole GQA group as a [16, 64] query tile, so each KV head's blocks are read once (intensity about g = 7). Tiles of 64 tokens look up their block per token, which decouples the tile from the block size (8, 16, and 32 all work under `tl.dot`'s 16 minimum). P stays fp32 through P·V, the fix for the 2-point bf16 argmax gap Phase 1 traced to rounding P. Split-K (Flash-Decoding) partials plus a combine kernel fill the 20 SMs at batch 1, where the single pass has only 2 programs.
+- The decode path is one launch per layer (two with split-K) instead of the gather path's per-sequence gather + matmul + softmax chain, and the prefill rows of a mixed batch keep the gather reference. Tests were mutation-checked: three deliberate kernel bugs each fail 26–44 of the 45 invariant-5 cases.
+
 ## Phase 4: Continuous batching scheduler
 
 ## Phase 5: INT8 KV cache

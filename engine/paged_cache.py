@@ -11,6 +11,10 @@ K and V per layer per step; the Phase 3 Triton kernel reads the blocks in place 
 
 Several sequences can share one forward: their tokens are packed flat ([T_total, ...]), and PagedMetadata says which
 rows belong to which sequence. The linear layers then run once over all of them.
+
+attn_backend="triton" (Phase 3) sends every decoding sequence (one new token) through the Triton kernel in a single
+launch per layer, reading blocks in place; sequences with several new tokens (prefill, chunks) still use the gather
+reference.
 """
 
 from dataclasses import dataclass
@@ -20,6 +24,8 @@ import torch
 from engine.attention import attention
 from engine.block_manager import BlockManager
 from engine.config import ModelConfig
+
+BACKENDS = ("gather", "triton")
 
 
 @dataclass
@@ -82,9 +88,12 @@ def build_metadata(manager: BlockManager, batch: list[tuple[int, int, int]],
 
 class PagedKVCache:
     def __init__(self, cfg: ModelConfig, num_blocks: int, block_size: int, device: str | torch.device,
-                 dtype: torch.dtype):
+                 dtype: torch.dtype, attn_backend: str = "gather"):
         """Allocate the pool: K and V each [layers, H_kv, num_blocks, block_size, d]. Contents are garbage until
         written."""
+        if attn_backend not in BACKENDS:
+            raise ValueError(f"attn_backend must be one of {BACKENDS}")
+        self.attn_backend = attn_backend
         shape = (cfg.num_layers, cfg.num_kv_heads, num_blocks, block_size, cfg.head_dim)
         self.k = torch.empty(shape, device=device, dtype=dtype)
         self.v = torch.empty(shape, device=device, dtype=dtype)
@@ -102,6 +111,18 @@ class PagedKVCache:
         if meta is None or meta.num_tokens != n_tokens:
             raise ValueError("a paged forward needs metadata for exactly its tokens")
         self.meta = meta
+        self._decode = None
+        if self.attn_backend == "triton":
+            dec = [i for i in range(meta.num_seqs) if meta.query_starts[i + 1] - meta.query_starts[i] == 1]
+            self._prefill = [i for i in range(meta.num_seqs) if meta.query_starts[i + 1] - meta.query_starts[i] > 1]
+            if dec:
+                # Once per forward, shared by all layers: the decode rows and their slice of the metadata.
+                if len(dec) == meta.num_seqs:
+                    rows, bt, ctx = None, meta.block_tables, meta.context_lens_t
+                else:
+                    idx = torch.tensor(dec, device=meta.positions.device)
+                    rows, bt, ctx = meta.last_token_indices[idx], meta.block_tables[idx], meta.context_lens_t[idx]
+                self._decode = (rows, bt, ctx, max(meta.context_lens[i] for i in dec))
 
     def write(self, layer: int, k: torch.Tensor, v: torch.Tensor) -> None:
         """Scatter this forward's k, v [T, H_kv, d] into their slots."""
@@ -117,11 +138,30 @@ class PagedKVCache:
         v = self.v[layer][:, blocks].view(Hkv, -1, d)[:, :ctx]
         return k, v
 
+    def _attend_gather(self, layer: int, i: int, q: torch.Tensor, positions: torch.Tensor,
+                       scale: float) -> torch.Tensor:
+        """Reference attention for sequence i's rows of q, over its gathered context."""
+        m = self.meta
+        a, b = m.query_starts[i], m.query_starts[i + 1]
+        k, v = self.gather(layer, i)
+        return attention(q[a:b], k, v, positions[a:b], self._arange[:m.context_lens[i]], scale)
+
     def attend(self, layer: int, q: torch.Tensor, positions: torch.Tensor, scale: float) -> torch.Tensor:
-        """Attention for every sequence in the forward, each over its own gathered context. Returns [T, Hq * d]."""
-        m, outs = self.meta, []
-        for i in range(m.num_seqs):
-            a, b = m.query_starts[i], m.query_starts[i + 1]
-            k, v = self.gather(layer, i)
-            outs.append(attention(q[a:b], k, v, positions[a:b], self._arange[:m.context_lens[i]], scale))
-        return outs[0] if len(outs) == 1 else torch.cat(outs)
+        """Attention for every sequence in the forward over its own context. Returns [T, Hq * d]."""
+        m = self.meta
+        if self._decode is None:
+            outs = [self._attend_gather(layer, i, q, positions, scale) for i in range(m.num_seqs)]
+            return outs[0] if len(outs) == 1 else torch.cat(outs)
+        from engine.triton_decode import paged_decode_attention
+
+        rows, bt, ctx, max_ctx = self._decode
+        T, Hq, d = q.shape
+        q_dec = q if rows is None else q[rows]
+        dec = paged_decode_attention(q_dec, self.k[layer], self.v[layer], bt, ctx, scale, max_ctx)
+        if rows is None:
+            return dec.view(T, Hq * d)
+        out = torch.empty(T, Hq * d, device=q.device, dtype=q.dtype)
+        out[rows] = dec.view(-1, Hq * d)
+        for i in self._prefill:
+            out[m.query_starts[i]:m.query_starts[i + 1]] = self._attend_gather(layer, i, q, positions, scale)
+        return out

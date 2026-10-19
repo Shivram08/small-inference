@@ -107,11 +107,12 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 3: Triton paged-attention decode
 
-- [ ] Triton tutorials (vector add, fused softmax, matmul, fused attention)
-- [ ] Online softmax in NumPy (the (2, 5, 1) example)
-- [ ] Single-pass kernel: one program per (seq, KV head), g padded to 16. **Gate:** invariant 5
-- [ ] Split-K + combine kernel. **Gate:** invariant 5, and faster at batch 1 with long context
-- [ ] Sweeps: bandwidth vs. context (128–8k) × batch (1, 8, 32) × block size (8, 16, 32), with measured BW as the ceiling
+- [ ] Triton tutorials (vector add, fused softmax, matmul, fused attention): the user, on their own
+- [ ] Online softmax in NumPy (the (2, 5, 1) example): the user, on their own
+- [x] Single-pass kernel (`engine/triton_decode.py`): one program per (sequence, KV head), the group's g query heads padded to 16 rows, 64-token tiles with a per-token block-table lookup (so any block size works with `tl.dot`'s 16 minimum), online softmax, P kept in fp32 for P·V (IEEE dot). **Gate (invariant 5):** `tests/test_decode_kernel.py`, 45 cases against an fp64 gather reference: shuffled tables, a ragged batch of lengths 1/15/16/17/33/100/1000, lengths at tile boundaries (1, 2, 63, 64, 65, 4097), block sizes 8/16/32, 0.5B and 1.5B head layouts, bf16 and fp32. bf16 median relative error 1.1e-3 (below the bf16 half-ulp, 2e-3). Mutation check: ignoring the block table, dropping the rescale, or an unweighted combine each fail 26–44 cases
+- [x] Split-K + combine kernel (same file; `choose_splits` aims for about 40 programs with splits of at least 256 tokens). **Gate (invariant 5):** same 45 cases with 3 and auto splits, plus more splits than a sequence has tokens. Speed half of the gate pending (item 4c in `docs/deferred-runs.md`); Balanced-mode smoke test: batch 1, 8k context, 394 → 113 µs per layer
+- [x] Wired into the model: `PagedKVCache(attn_backend="triton")` runs every decoding sequence through one kernel launch per layer and keeps the gather path for prefill rows. Gates (`tests/test_paged.py`): a packed prefill + decode batch matches the gather backend; Qwen2.5-0.5B fp32 generates the same 50 greedy tokens as the contiguous cache; bf16 teacher-forced decode agrees on 96–100% of steps (not bitwise: fp32 P and a different sum order)
+- [~] Sweeps (`bench/decode_sweep.py`): bandwidth vs context (128–8k) × batch (1, 8, 32) × block size (8, 16, 32), single pass and split-K, against the measured 156 GB/s; writes `bandwidth.png` and `split_k.png`, redrawable with `--plot`. Smoke-tested in Balanced mode only (batch 32, 8k: 82% of measured BW). Pending: item 4c
 
 ## Phase 4: Continuous batching scheduler
 

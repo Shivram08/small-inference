@@ -179,3 +179,58 @@ def test_paged_equals_contiguous_real(real, trace_prompt, length):
     m.free(0)
     assert greedy_generate_paged(real, prompt, 50, m, pcache) == greedy_generate(real, prompt, 50)
     assert m.num_free_blocks() == 64
+
+
+# --- Phase 3: the Triton decode backend inside the model -----------------------------------------------------------
+
+@gpu
+def test_triton_backend_mixed_batch_tiny():
+    """A packed forward with one prefill sequence and two decoding ones: the Triton backend (kernel for the decode
+    rows, gather for the prefill rows) matches the all-gather backend (fp32, so to IEEE-sum-order precision)."""
+    model = Qwen2Model(TINY, {k: v.float().cuda() for k, v in random_weights(TINY).items()})
+    outs = {}
+    for backend in ("gather", "triton"):
+        m, cache = fragmented_pool(TINY, 32, 4, "cuda", torch.float32)
+        cache.attn_backend = backend
+        for s, n in ((1, 9), (2, 30)):  # two sequences with cached context
+            m.allocate(s, n)
+            meta = build_metadata(m, [(s, 0, n)], "cuda")
+            model.forward(torch.arange(n, device="cuda") % 97, meta.positions, cache, meta=meta)
+        m.allocate(0, 13)
+        m.append_slot(1)
+        m.append_slot(2)
+        meta = build_metadata(m, [(1, 9, 1), (0, 0, 13), (2, 30, 1)], "cuda")
+        ids = torch.tensor([5] + list(range(20, 33)) + [7], device="cuda")
+        outs[backend] = model.forward(ids, meta.positions, cache, meta=meta)
+    torch.testing.assert_close(outs["triton"], outs["gather"], rtol=1e-5, atol=1e-5)
+
+
+@gpu
+@pytest.mark.parametrize("length", [1, 17, 33])
+def test_triton_backend_generation_real(real, trace_prompt, length):
+    """Qwen2.5-0.5B through the Triton decode backend. fp32: 50 greedy tokens identical to the contiguous cache.
+    bf16: teacher-forced on the contiguous run's tokens, decode-step argmax agrees on nearly every step. Not bitwise:
+    the kernel keeps P in fp32 and sums in a different order (the gather backend is bitwise)."""
+    prompt = trace_prompt[:length]
+    ref = greedy_generate(real, prompt, 50)
+    if real.dtype == torch.float32:
+        m, cache = fragmented_pool(real.cfg, 64, 16, "cuda", real.dtype)
+        cache.attn_backend = "triton"
+        assert greedy_generate_paged(real, prompt, 50, m, cache) == ref
+        return
+    m, cache = fragmented_pool(real.cfg, 64, 16, "cuda", real.dtype)
+    cache.attn_backend = "triton"
+    seq = prompt + ref
+    m.allocate(0, length)
+    meta = build_metadata(m, [(0, 0, length)], "cuda")
+    real.forward(torch.tensor(prompt, device="cuda"), meta.positions, cache, meta=meta)
+    agree = 0
+    for pos in range(length, len(seq) - 1):  # feed the reference's own tokens; predict the next one
+        m.append_slot(0)
+        meta = build_metadata(m, [(0, pos, 1)], "cuda")
+        logits = real.forward(torch.tensor([seq[pos]], device="cuda"), meta.positions, cache, last_only=True,
+                              meta=meta)
+        agree += int(logits[0].argmax()) == seq[pos + 1]
+    rate = agree / (len(seq) - 1 - length)
+    print(f"\nbf16 length {length}: Triton-backend argmax agrees with the contiguous run on {rate:.0%} of steps")
+    assert rate >= 0.9

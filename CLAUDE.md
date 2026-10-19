@@ -50,6 +50,7 @@ bench/
   profile_decode.py # torch.profiler breakdown of a batch-1 decode step (HF or this engine)
   cpu_probe.py     # CPU-only timing probe for host-side variance
   paged_gather.py  # paged gather + attention vs contiguous attention, per layer
+  decode_sweep.py  # Triton decode kernel: bandwidth vs context x batch x block size, split-K
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter
