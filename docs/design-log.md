@@ -38,4 +38,7 @@ Two or three lines per phase: what was chosen, what was tried and failed, and wh
 
 ## Phase 5: INT8 KV cache
 
+- Three formats behind the same cache interface: bf16, INT8 per-token K/V, and INT8 per-channel K (scales per 16-token block and channel; the partial last block of K in bf16 staging) with per-token V. Dequantization is fused into the decode kernel: per-token K scales multiply the score columns after an exact int8 → bf16 tensor-core dot, V scales fold into P, per-channel K is dequantized on the tile. On Qwen2.5-0.5B with 64-token chunked prefill, per-channel K costs +0.19% perplexity vs +4.1% for per-token, at 6,624 vs 6,336 B/token (bf16: 12,288): Qwen's K has outlier channels (up to 23.7× the median channel's absmax at layer 8) that set the per-token scale for every other channel.
+- Tried and changed: staging every block a forward touches ran out of slots on large chunks; blocks written whole are now quantized directly, bounding staging at 2 slots per sequence. Exact batch and preemption invariance do not survive quantization (rounding flips amplify fp32 order noise layer by layer), so INT8 is evaluated by fidelity metrics rather than token identity.
+
 ## Phase 6: Benchmark vs. vLLM and write-up

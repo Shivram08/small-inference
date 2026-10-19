@@ -26,6 +26,11 @@ class BlockManager:
         self._ref = [0] * num_blocks
         self._tables: dict[int, list[int]] = {}
         self._lengths: dict[int, int] = {}
+        self._free_listeners: list = []
+
+    def add_free_listener(self, fn) -> None:
+        """Call fn(blocks) with the blocks a free() returns to the free list (e.g. to drop per-block side state)."""
+        self._free_listeners.append(fn)
 
     def num_free_blocks(self) -> int:
         """Blocks not owned by any sequence."""
@@ -83,12 +88,16 @@ class BlockManager:
 
     def free(self, seq_id: int) -> None:
         """Release a sequence; each of its blocks returns to the free list when its reference count reaches 0."""
+        released = []
         for b in reversed(self._tables.pop(seq_id)):  # reversed: the stack then hands them out in table order
             self._ref[b] -= 1
             assert self._ref[b] >= 0, f"block {b} freed twice"
             if self._ref[b] == 0:
                 self._free.append(b)
+                released.append(b)
         del self._lengths[seq_id]
+        for fn in self._free_listeners:
+            fn(released)
 
     def ref_count(self, block: int) -> int:
         """Number of sequences holding `block`."""

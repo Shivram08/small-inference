@@ -20,15 +20,29 @@ DEFAULT_KV_BYTES = 2 * 2**30
 
 class ContinuousEngine:
     def __init__(self, model: Qwen2Model | None = None, kv_bytes: int = DEFAULT_KV_BYTES, block_size: int = 16,
-                 num_blocks: int | None = None, config: SchedulerConfig | None = None, attn_backend: str = "triton"):
-        """Use `model` (default: 0.5B, bf16, GPU) with a pool of num_blocks blocks, or as many as fit in kv_bytes."""
+                 num_blocks: int | None = None, config: SchedulerConfig | None = None, attn_backend: str = "triton",
+                 kv_format: str = "bf16"):
+        """Use `model` (default: 0.5B, bf16, GPU) with a pool of num_blocks blocks, or as many as fit in kv_bytes.
+        kv_format: "bf16" (the model dtype), "int8" (per-token K/V), or "int8-kchannel" (per-channel K, per-token V);
+        at the same kv_bytes the INT8 formats hold about twice the tokens."""
+        from engine.quant_cache import QuantPagedKVCache, blocks_for_budget
+
         self.model = model or Qwen2Model.from_pretrained()
-        cfg = self.model.cfg
-        elem = torch.tensor([], dtype=self.model.dtype).element_size()
-        n = num_blocks or PagedKVCache.blocks_for_budget(cfg, kv_bytes, block_size, elem)
-        self.manager = BlockManager(n, block_size)
-        self.cache = PagedKVCache(cfg, n, block_size, self.model.device, self.model.dtype, attn_backend)
-        self.scheduler = Scheduler(self.manager, config or SchedulerConfig())
+        cfg, dev, dt = self.model.cfg, self.model.device, self.model.dtype
+        config = config or SchedulerConfig()
+        self.kv_format = kv_format
+        if kv_format == "bf16":
+            elem = torch.tensor([], dtype=dt).element_size()
+            n = num_blocks or PagedKVCache.blocks_for_budget(cfg, kv_bytes, block_size, elem)
+            self.manager = BlockManager(n, block_size)
+            self.cache = PagedKVCache(cfg, n, block_size, dev, dt, attn_backend)
+        else:
+            n_stage = 2 * config.max_num_seqs  # at most 2 partial blocks per sequence (engine/quant_cache.py)
+            n = num_blocks or blocks_for_budget(cfg, kv_format, kv_bytes, block_size, n_stage)
+            self.manager = BlockManager(n, block_size)
+            self.cache = QuantPagedKVCache(cfg, n, block_size, dev, dt, attn_backend, kv_format, self.manager,
+                                           n_stage)
+        self.scheduler = Scheduler(self.manager, config)
 
     def add_request(self, req_id: int, prompt_ids: list[int], output_len: int) -> None:
         """Queue a request (FIFO)."""

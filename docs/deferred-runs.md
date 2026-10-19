@@ -27,6 +27,11 @@ When an item has run: record the result folder and the outcome in `docs/implemen
 | 7 | **Chunked vs unchunked prefill**, 3 shuffled reps on item 6's traces | `.venv/bin/python -m bench.baseline --engines continuous,continuous-nochunk --rates <item 6's rates>` | ~1–1.5 h | as item 6 (one shared model, two 1.5 GiB pools) | Phase 4 "p99 ITL with and without chunking" and "throughput and p99 TPOT vs rate" |
 | 8 | Phase 4 figures from items 6–7 (and item 5 for HF / Phase 1 on their traces) | `.venv/bin/python -m bench.rate_plots results/<item 7 campaign>/manifest.json --out docs/figures/phase4` | seconds | 1 core | Phase 4 plots |
 
+| 9 | Download Qwen2.5-1.5B-Instruct (3.1 GB, network; disk has 946 GB free) | `.venv/bin/hf download Qwen/Qwen2.5-1.5B-Instruct` | a few min | network | Phase 5 on 1.5B (items 10–11) |
+| 10 | Phase 5 three-config table: quality (64-token chunked prefill: perplexity, KL, top-1, quantization error, K outliers), capacity, and decode-kernel timing per format | `.venv/bin/python -m bench.kv_quant_eval --timing` then `--model Qwen/Qwen2.5-1.5B-Instruct --timing` | ~2 + ~5 min | 1 core, GPU; 1.5B: ~4.5 GB GPU memory | Phase 5 gate (the table); 0.5B quality already measured, timing pending |
+| 11 | Phase 5 serving on 1.5B under memory pressure (1.5 GiB KV: 56k tokens bf16 vs ~110k INT8): bf16 capacity + rate traces first, then each INT8 format on the same traces, one process per format | `.venv/bin/python -m bench.baseline --model Qwen/Qwen2.5-1.5B-Instruct --engines continuous --fractions 0.3,0.6,0.9,1.2 --reps 1`, then for E in continuous-int8 continuous-int8k: `... --engines $E --rates <those rates> --reps 3` (and `continuous` again with `--rates`, 3 reps) | ~2–4 h | 1 core, GPU at full power, ~5 GB GPU memory | Phase 5 serving results: throughput and latency per format at matched memory |
+| 12 | Phase 5 figures | `.venv/bin/python -m bench.rate_plots <item 11 manifests> --out docs/figures/phase5` | seconds | 1 core | Phase 5 plots |
+
 Item 5's time: each rate trace lasts about n/λ of arrivals (100 / 0.0441 req/s ≈ 38 min at 0.3×), so one repetition of both engines is about 2.5 h plus cooldowns. To shorten it, run `--reps 1` first as a check (~2.7 h), then the full campaign.
 
 After item 5: rerun `bench/plots.py` on the new campaign, and compare TPOT, TTFT, and goodput per rate between the two engines.

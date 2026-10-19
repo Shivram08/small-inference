@@ -52,6 +52,7 @@ bench/
   paged_gather.py  # paged gather + attention vs contiguous attention, per layer
   decode_sweep.py  # Triton decode kernel: bandwidth vs context x batch x block size, split-K
   rate_plots.py    # throughput, p99 TPOT, p99 ITL vs offered rate from campaign manifests
+  kv_quant_eval.py # Phase 5 three-config table: chunked-prefill quality, capacity, kernel timing
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter

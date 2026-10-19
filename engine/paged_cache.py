@@ -36,10 +36,12 @@ class PagedMetadata:
     query_starts: list[int]  # [num_seqs + 1]: sequence i's new tokens are rows query_starts[i]:query_starts[i+1]
     context_lens: list[int]  # [num_seqs]: tokens in the cache after this forward's writes
     positions: torch.Tensor  # [T] absolute position of each new token
+    slots_cpu: list[int]  # [T] the same slots on the CPU (block bookkeeping for INT8 staging)
     slot_mapping: torch.Tensor  # [T] int64 slot of each new token
     slot_blocks: torch.Tensor  # [T] slot // block_size
     slot_offsets: torch.Tensor  # [T] slot % block_size
     block_ids: list[torch.Tensor]  # per sequence: its first ceil(context_len / B) blocks, int64 on device
+    block_ids_cpu: list[list[int]]  # the same on the CPU
     block_tables: torch.Tensor  # [num_seqs, max_blocks] int32, padded with -1 (the kernel-facing form)
     context_lens_t: torch.Tensor  # [num_seqs] int32 on device
     last_token_indices: torch.Tensor  # [num_seqs] row of each sequence's last new token
@@ -76,10 +78,12 @@ def build_metadata(manager: BlockManager, batch: list[tuple[int, int, int]],
         query_starts=query_starts,
         context_lens=context_lens,
         positions=as_long(positions),
+        slots_cpu=slots,
         slot_mapping=as_long(slots),
         slot_blocks=as_long([s // B for s in slots]),
         slot_offsets=as_long([s % B for s in slots]),
         block_ids=[as_long(t) for t in tables],
+        block_ids_cpu=tables,
         block_tables=torch.tensor(padded, dtype=torch.int32, device=device),
         context_lens_t=torch.tensor(context_lens, dtype=torch.int32, device=device),
         last_token_indices=as_long([e - 1 for e in query_starts[1:]]),
@@ -94,12 +98,15 @@ class PagedKVCache:
         if attn_backend not in BACKENDS:
             raise ValueError(f"attn_backend must be one of {BACKENDS}")
         self.attn_backend = attn_backend
-        shape = (cfg.num_layers, cfg.num_kv_heads, num_blocks, block_size, cfg.head_dim)
-        self.k = torch.empty(shape, device=device, dtype=dtype)
-        self.v = torch.empty(shape, device=device, dtype=dtype)
-        self.cfg, self.num_blocks, self.block_size = cfg, num_blocks, block_size
+        self.cfg, self.num_blocks, self.block_size, self.dtype = cfg, num_blocks, block_size, dtype
+        self._allocate((cfg.num_layers, cfg.num_kv_heads, num_blocks, block_size, cfg.head_dim), device, dtype)
         self.meta: PagedMetadata | None = None
         self._arange = torch.arange(num_blocks * block_size, device=device)
+
+    def _allocate(self, shape: tuple, device: str | torch.device, dtype: torch.dtype) -> None:
+        """K and V pools of `shape` in the model dtype (INT8 caches override this)."""
+        self.k = torch.empty(shape, device=device, dtype=dtype)
+        self.v = torch.empty(shape, device=device, dtype=dtype)
 
     @staticmethod
     def blocks_for_budget(cfg: ModelConfig, budget_bytes: int, block_size: int, bytes_per_elem: int = 2) -> int:
@@ -123,6 +130,7 @@ class PagedKVCache:
                     idx = torch.tensor(dec, device=meta.positions.device)
                     rows, bt, ctx = meta.last_token_indices[idx], meta.block_tables[idx], meta.context_lens_t[idx]
                 self._decode = (rows, bt, ctx, max(meta.context_lens[i] for i in dec))
+                self._decode_seqs = dec
 
     def write(self, layer: int, k: torch.Tensor, v: torch.Tensor) -> None:
         """Scatter this forward's k, v [T, H_kv, d] into their slots."""
@@ -157,7 +165,8 @@ class PagedKVCache:
         rows, bt, ctx, max_ctx = self._decode
         T, Hq, d = q.shape
         q_dec = q if rows is None else q[rows]
-        dec = paged_decode_attention(q_dec, self.k[layer], self.v[layer], bt, ctx, scale, max_ctx)
+        dec = paged_decode_attention(q_dec, self.k[layer], self.v[layer], bt, ctx, scale, max_ctx,
+                                     quant=self._kernel_quant(layer))
         if rows is None:
             return dec.view(T, Hq * d)
         out = torch.empty(T, Hq * d, device=q.device, dtype=q.dtype)
@@ -165,3 +174,7 @@ class PagedKVCache:
         for i in self._prefill:
             out[m.query_starts[i]:m.query_starts[i + 1]] = self._attend_gather(layer, i, q, positions, scale)
         return out
+
+    def _kernel_quant(self, layer: int):
+        """Extra kernel inputs for INT8 caches; None for the bf16 pool."""
+        return None

@@ -67,7 +67,11 @@ def round_sig(x: float, digits: int = 3) -> float:
 def main() -> None:
     """Run the whole campaign with every engine loaded once."""
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    p.add_argument("--engines", default="hf", help="comma-separated: hf, contiguous, continuous, continuous-nochunk")
+    p.add_argument("--engines", default="hf",
+                   help="comma-separated: hf, contiguous, continuous, continuous-nochunk, continuous-int8, "
+                        "continuous-int8k")
+    p.add_argument("--model", default=None, help="checkpoint for the continuous engines (default: 0.5B)")
+    p.add_argument("--kv-gib", type=float, default=1.5, help="KV pool per continuous engine, GiB")
     p.add_argument("--rates", default=None,
                    help="comma-separated req/s of existing rate traces (skips the capacity run), e.g. 0.0441,0.103,0.176")
     p.add_argument("--fractions", default=",".join(map(str, FRACTIONS)),
@@ -86,12 +90,13 @@ def main() -> None:
 
     from bench.engines import load_engine
     idle_c = gpu_temperature()  # before loading any model, so it is the idle baseline
-    engines = {name: load_engine(name) for name in names}
+    engines = {name: load_engine(name, model_id=args.model, kv_bytes=int(args.kv_gib * 2**30)) for name in names}
     campaign = args.results_root / f"{datetime.now():%Y%m%d-%H%M%S}_{'_'.join(names)}_campaign"
     campaign.mkdir(parents=True, exist_ok=False)
     target_c = args.cool_to if args.cool_to is not None else (idle_c + args.cool_tol if idle_c is not None else None)
     fractions = [float(f) for f in args.fractions.split(",")]
-    manifest = {"engines": names, "n": N, "seed": SEED, "fractions": fractions, "order_seed": args.order_seed,
+    manifest = {"engines": names, "model": args.model, "kv_gib": args.kv_gib, "n": N, "seed": SEED,
+                "fractions": fractions, "order_seed": args.order_seed,
                 "idle_gpu_c": idle_c, "cool_target_c": target_c, "runs": []}
 
     def replay(name: str, trace: Path, rep: int) -> dict:

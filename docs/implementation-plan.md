@@ -127,11 +127,13 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 5: INT8 KV cache
 
-- [ ] Quantize/dequantize reference implementation and error measurement
-- [ ] INT8 per-token K/V kernel (scale folded into scores and P)
-- [ ] Per-channel K (quantized per block, bf16 partial block) + per-token V
-- [ ] Chunked-prefill perplexity, capacity, and serving runs on 1.5B
-- [ ] **Gate:** the three-config table
+- [x] Quantize/dequantize reference (`engine/quant.py`: symmetric absmax INT8, fp16 scales, values in [-127, 127]) and error measurement. Gates: `tests/test_quant.py` (half-step bounds per token and per channel, zero vectors, outlier-channel case: 8.7% → 0.47% error on normal channels). Measured on Qwen2.5-0.5B (20 ShareGPT documents, bf16 cache's own K/V): K relative error 0.90% per-token vs 0.32% per-channel; V 0.77%; K outlier ratio (max channel absmax / median) mean 5.4, up to 23.7 at layer 8
+- [x] INT8 per-token K/V (`engine/quant_cache.py`, format `int8`) with dequantization fused into the decode kernel (`KV_MODE 1`: int8 → bf16 exact for the tensor-core dot, K scale on the scores, V scale folded into P). 6,336 B/token for 0.5B
+- [x] Per-channel K (quantized per 16-token block; the partial last block of K in a bf16 staging slot) + per-token V (format `int8-kchannel`, `KV_MODE 2`). Blocks written whole by one forward are quantized directly (never staged), so staging needs at most 2 slots per sequence (an earlier version staged every touched block and ran out at large chunks). Freed sequences release slots through a new BlockManager free listener. 6,624 B/token
+  - Gates: `tests/test_quant_cache.py`: round-trip bounds through chunked writes across blocks; staging slots track exactly the live partial blocks over 300 random operations; the kernel equals fp64 attention over the cache's own dequantized K/V (ragged lengths with partial blocks, block sizes 8/16/32, both head layouts, single and split; fp32 within 1e-4, bf16 within 2e-2); Qwen2.5-0.5B fidelity sanity bounds; forced preemption finishes with no leaked blocks or staging slots
+  - Finding: invariants 6 and 7 (token identity) cannot hold for a lossy cache. Filling the same tokens incrementally vs in one prefill gives identical layer-0 int8 values, but fp32 order noise flips a few roundings, each flip is a whole quantization step, and the perturbation compounds: 8–31% of deeper layers' int8 K values differ and logits by 0.1–0.24, even with the gather reference in fp32 (an unquantized cache agrees to 6e-5). INT8 is judged by fidelity instead
+- [~] Chunked-prefill perplexity, capacity, and serving runs (`bench/kv_quant_eval.py`, engines `continuous-int8` / `continuous-int8k`, `bench/baseline.py --model --kv-gib`). **Measured on 0.5B** (`results/kv_quant/`, 20 documents, 64-token chunks): perplexity bf16 8.633, int8 8.984 (+4.1%), int8-kchannel 8.649 (+0.19%); mean KL vs bf16 0.051 vs 0.009 nats; top-1 agreement 91.5% vs 96.5%; tokens in 2 GiB 174,752 / 338,928 / 322,288. Pending: timing (item 10), 1.5B (items 9–11)
+- [ ] **Gate:** the three-config table (complete when the 1.5B quality, timing, and serving columns are in)
 
 ## Phase 6: Benchmark vs. vLLM and write-up
 
