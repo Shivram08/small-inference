@@ -1,0 +1,56 @@
+{
+  "created_utc": "2026-10-19T23:26:29.430909+00:00",
+  "git_commit": "24c1e4636f4b013596fb0a9c5c8a1dd5ca22d46f",
+  "git_dirty_bench": false,
+  "source": {
+    "repo": "anon8231489123/ShareGPT_Vicuna_unfiltered",
+    "file": "ShareGPT_V3_unfiltered_cleaned_split.json",
+    "sha256": "35f0e213ce091ed9b9af2a1f0755e9d39f9ccec34ab281cd4ca60d70f6479ba4"
+  },
+  "tokenizer": {
+    "name": "Qwen/Qwen2.5-0.5B-Instruct",
+    "revision": "7ae557604adf67be50417f59c2c2f167def9a775"
+  },
+  "prompt_format": "Qwen chat template, default system prompt, add_generation_prompt=True",
+  "selection": "first two turns human -> gpt; prompt = human turn, output_len = tokens of gpt reply",
+  "filters": {
+    "max_prompt": 1024,
+    "min_output": 4,
+    "max_output": 512,
+    "max_total": 2048
+  },
+  "n": 1000,
+  "sample_seed": 0,
+  "sampling_stats": {
+    "conversations": 94145,
+    "not_human_gpt": 756,
+    "empty_text": 0,
+    "prompt_too_long": 114,
+    "output_too_short": 9,
+    "output_too_long": 152,
+    "total_too_long": 0,
+    "scanned": 2031,
+    "kept": 1000
+  },
+  "prompt_len": {
+    "mean": 118.927,
+    "p50": 52.0,
+    "p90": 278.20000000000005,
+    "min": 30,
+    "max": 1023,
+    "sum": 118927
+  },
+  "output_len": {
+    "mean": 218.124,
+    "p50": 217.0,
+    "p90": 400.20000000000005,
+    "min": 4,
+    "max": 512,
+    "sum": 218124
+  },
+  "rate_req_s": 8.65,
+  "burst": false,
+  "arrival_seed": 1,
+  "arrival_span_s": 116.57718390120017,
+  "trace_sha256": "bd401c552033426a540db62b13efd3f5775011cf39d94b660280f3494216dabe"
+}

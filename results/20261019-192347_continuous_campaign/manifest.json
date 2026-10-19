@@ -1,0 +1,171 @@
+{
+  "engines": [
+    "continuous"
+  ],
+  "model": null,
+  "kv_gib": 1.5,
+  "n": 1000,
+  "seed": 0,
+  "fractions": [
+    0.2,
+    0.4,
+    0.6,
+    0.8,
+    1.0,
+    1.2
+  ],
+  "order_seed": 0,
+  "idle_gpu_c": 59.0,
+  "cool_target_c": 62.0,
+  "runs": [
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_burst.jsonl",
+      "run_dir": "results/20261019-192356_continuous_sharegpt_n1000_seed0_burst",
+      "wall_s": 117.85377192497253,
+      "achieved_rate_req_s": 8.653684697263147,
+      "overload": null,
+      "cooldown_after": {
+        "waited_s": 30.08660213300027,
+        "start_c": 69.0,
+        "end_c": 56.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate8.65.jsonl",
+      "run_dir": "results/20261019-192630_continuous_sharegpt_n1000_seed0_rate8.65",
+      "wall_s": 133.21528673171997,
+      "achieved_rate_req_s": 7.838567555308938,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.09915332300079,
+        "start_c": 68.0,
+        "end_c": 56.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate5.19.jsonl",
+      "run_dir": "results/20261019-192913_continuous_sharegpt_n1000_seed0_rate5.19",
+      "wall_s": 211.0016734600067,
+      "achieved_rate_req_s": 4.883209363005236,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.07583385700127,
+        "start_c": 66.0,
+        "end_c": 55.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate3.46.jsonl",
+      "run_dir": "results/20261019-193314_continuous_sharegpt_n1000_seed0_rate3.46",
+      "wall_s": 305.9054560661316,
+      "achieved_rate_req_s": 3.347533968534103,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.10364199200194,
+        "start_c": 65.0,
+        "end_c": 54.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate1.73.jsonl",
+      "run_dir": "results/20261019-193850_continuous_sharegpt_n1000_seed0_rate1.73",
+      "wall_s": 601.7532246112823,
+      "achieved_rate_req_s": 1.688922806368146,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.088837489998696,
+        "start_c": 67.0,
+        "end_c": 55.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate10.4.jsonl",
+      "run_dir": "results/20261019-194922_continuous_sharegpt_n1000_seed0_rate10.4",
+      "wall_s": 145.24798798561096,
+      "achieved_rate_req_s": 7.043209450961097,
+      "overload": true,
+      "cooldown_after": {
+        "waited_s": 30.102028962002805,
+        "start_c": 67.0,
+        "end_c": 55.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "trace": "sharegpt_n1000_seed0_rate6.92.jsonl",
+      "run_dir": "results/20261019-195217_continuous_sharegpt_n1000_seed0_rate6.92",
+      "wall_s": 163.7301824092865,
+      "achieved_rate_req_s": 6.328151401494528,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.079517652000504,
+        "start_c": 67.0,
+        "end_c": 55.0,
+        "target_c": 62.0,
+        "timed_out": false
+      }
+    }
+  ],
+  "capacity_req_s": 8.653684697263147,
+  "rates_req_s": [
+    1.73,
+    3.46,
+    5.19,
+    6.92,
+    8.65,
+    10.4
+  ],
+  "orders": [
+    [
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate8.65.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate5.19.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate3.46.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate1.73.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate10.4.jsonl"
+      ],
+      [
+        "continuous",
+        "sharegpt_n1000_seed0_rate6.92.jsonl"
+      ]
+    ]
+  ]
+}
