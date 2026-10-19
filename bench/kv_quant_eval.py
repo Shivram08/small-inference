@@ -45,11 +45,13 @@ def documents(trace: Path, n: int, lo: int = 256, hi: int = 1024) -> list[list[i
     return docs[:n]
 
 
-def make_cache(cfg, fmt: str, num_blocks: int, manager: BlockManager, device="cuda", dtype=torch.bfloat16):
-    """A cache of `fmt` over `manager`, Triton backend (prefill rows use the gather reference either way)."""
+def make_cache(cfg, fmt: str, num_blocks: int, manager: BlockManager, device="cuda", dtype=torch.bfloat16,
+               n_stage: int = 8):
+    """A cache of `fmt` over `manager`, Triton backend (prefill rows use the gather reference either way).
+    n_stage: format B staging slots, 2 per concurrent sequence."""
     if fmt == "bf16":
         return PagedKVCache(cfg, num_blocks, 16, device, dtype, "triton")
-    return QuantPagedKVCache(cfg, num_blocks, 16, device, dtype, "triton", fmt, manager, 8)
+    return QuantPagedKVCache(cfg, num_blocks, 16, device, dtype, "triton", fmt, manager, n_stage)
 
 
 @torch.inference_mode()
@@ -142,19 +144,25 @@ def timing(cfg, points: list[tuple[int, int]], reps: int = 10, calls: int = 20) 
         nb = batch * -(-S // 16)
         for f in FORMATS:
             m = BlockManager(nb, 16)
-            cache = make_cache(cfg, f, nb, m)
-            for s in range(batch):
+            cache = make_cache(cfg, f, nb, m, n_stage=2 * batch)
+
+            def forward_write(seq_batch):
+                """One forward's metadata + layer-0 writes, exactly as the engine would issue them."""
+                meta = build_metadata(m, seq_batch, "cuda")
+                cache.begin(meta.num_tokens, meta)
+                k = torch.randn(meta.num_tokens, cfg.num_kv_heads, cfg.head_dim, device="cuda", dtype=torch.bfloat16)
+                cache.write(0, k, torch.randn_like(k))
+                return meta
+
+            for s in range(batch):  # prefill S - 1 tokens in 512-token chunks
                 m.allocate(s, 0)
-                for start in range(0, S, 512):
-                    n = min(512, S - start)
+                for start in range(0, S - 1, 512):
+                    n = min(512, S - 1 - start)
                     m.append_slots(s, n)
-                    meta = build_metadata(m, [(s, start, n)], "cuda")
-                    cache.begin(n, meta)
-                    for layer in range(1):
-                        k = torch.randn(n, cfg.num_kv_heads, cfg.head_dim, device="cuda", dtype=torch.bfloat16)
-                        cache.write(layer, k, torch.randn_like(k))
-            meta = build_metadata(m, [(s, S - 1, 1) for s in range(batch)], "cuda")
-            cache.begin(batch, meta)
+                    forward_write([(s, start, n)])
+            for s in range(batch):  # the decode token: a new position, as in a real decode step
+                m.append_slot(s)
+            meta = forward_write([(s, S - 1, 1) for s in range(batch)])
             q = torch.randn(batch, cfg.num_q_heads, cfg.head_dim, device="cuda", dtype=torch.bfloat16)
             us = time_call_us(lambda: paged_decode_attention(q, cache.k[0], cache.v[0], meta.block_tables,
                                                              meta.context_lens_t, cfg.head_dim ** -0.5, S,

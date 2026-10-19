@@ -26,10 +26,11 @@
   "phase5_table": {
     "kind": "kv_quant_table",
     "results": [
-      "results/kv_quant/20261019-142247_Qwen2.5-0.5B-Instruct/results.json"
+      "results/kv_quant/20261019-185822_Qwen2.5-0.5B-Instruct/results.json",
+      "results/kv_quant/20261019-185928_Qwen2.5-1.5B-Instruct/results.json"
     ],
     "out": "docs/figures/phase5",
-    "pending": "1.5B and timing: deferred items 9-10"
+    "pending": "INT8 kernel timing to be redone after the kernel fix"
   },
   "phase5_rates": {
     "kind": "rates",

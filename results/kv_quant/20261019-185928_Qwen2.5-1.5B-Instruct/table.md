@@ -1,0 +1,16 @@
+| Format | Bytes/token | Tokens in budget | Perplexity | Mean KL vs bf16 (nats) | Top-1 agree | K rel. error | V rel. error |
+|---|---|---|---|---|---|---|---|
+| bf16 | 28,672 | 74,896 | 6.953 | 0.0000 | 100.0% | 0.0000 | 0.0000 |
+| int8 | 14,560 | 147,488 | 7.565 | 0.1177 | 89.2% | 0.0119 | 0.0089 |
+| int8-kchannel | 15,344 | 138,032 | 6.992 | 0.0389 | 94.1% | 0.0034 | 0.0089 |
+
+K outlier ratio (max channel absmax / median, per layer): mean 7.2, max 68.1 (layer 0), min 2.7
+
+| Batch | Context | bf16 µs/layer | int8 µs/layer | int8-kchannel µs/layer |
+|---|---|---|---|---|
+| 1 | 1024 | 57.9 | 60.5 | 647.5 |
+| 1 | 4096 | 128.8 | 99.8 | 1031.6 |
+| 8 | 1024 | 100.8 | 95.9 | 1896.8 |
+| 8 | 4096 | 219.3 | 260.6 | 7420.7 |
+| 32 | 1024 | 251.4 | 262.9 | 7689.3 |
+| 32 | 4096 | 962.9 | 985.5 | 676574.0 |
