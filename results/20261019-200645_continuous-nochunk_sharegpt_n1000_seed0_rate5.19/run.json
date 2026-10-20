@@ -1,0 +1,26 @@
+{
+  "engine": "continuous-nochunk",
+  "engine_config": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dtype": "bfloat16",
+    "kv": "paged",
+    "kv_format": "bf16",
+    "kv_bytes": 1610612736,
+    "block_size": 16,
+    "num_blocks": 8192,
+    "attn": "triton decode + gather prefill",
+    "scheduler": {
+      "max_num_seqs": 64,
+      "max_num_batched_tokens": 2048,
+      "chunked_prefill": false,
+      "watermark_blocks": 0
+    }
+  },
+  "trace": "traces/sharegpt_n1000_seed0_rate5.19.jsonl",
+  "n_requests": 1000,
+  "warmup_requests": 2,
+  "wall_start_unix": 1792454807.2767713,
+  "wall_end_unix": 1792455011.5274708,
+  "telemetry": true,
+  "peak_rss_mib": 1551
+}

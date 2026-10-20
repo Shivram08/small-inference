@@ -19,9 +19,10 @@
   },
   "phase4_rates": {
     "kind": "rates",
-    "manifests": [],
-    "out": "docs/figures/phase4",
-    "pending": "deferred items 6-7"
+    "manifests": [
+      "results/20261019-195616_continuous_continuous-nochunk_campaign/manifest.json"
+    ],
+    "out": "docs/figures/phase4"
   },
   "phase5_table": {
     "kind": "kv_quant_table",
