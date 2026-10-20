@@ -22,7 +22,7 @@ def _model(model_id: str | None = None):
 
 
 def load_engine(name: str, model_id: str | None = None, kv_bytes: int = CONTINUOUS_KV_BYTES,
-                **fake_timing: float) -> tuple[object, dict]:
+                max_num_seqs: int = 64, **fake_timing: float) -> tuple[object, dict]:
     """(engine, config recorded in run.json) for "fake", "hf", "contiguous", a continuous variant (CONTINUOUS), or
     "vllm" / "vllm-eager" (vLLM venv only). model_id and kv_bytes apply to the continuous and vLLM engines; hf and
     contiguous are the 0.5B baselines."""
@@ -43,7 +43,8 @@ def load_engine(name: str, model_id: str | None = None, kv_bytes: int = CONTINUO
         from engine.continuous import ContinuousEngine
         from engine.scheduler import SchedulerConfig
         fmt, chunked = CONTINUOUS[name]
-        sched = SchedulerConfig() if chunked else SchedulerConfig(chunked_prefill=False, max_num_batched_tokens=2048)
+        sched = (SchedulerConfig(max_num_seqs=max_num_seqs) if chunked
+                 else SchedulerConfig(max_num_seqs=max_num_seqs, chunked_prefill=False, max_num_batched_tokens=2048))
         eng = ContinuousEngine(_model(model_id), kv_bytes=kv_bytes, config=sched, kv_format=fmt)
         return eng, {"model": model_id or DEFAULT_MODEL, "dtype": "bfloat16", "kv": "paged", "kv_format": fmt,
                      "kv_bytes": kv_bytes, "block_size": 16, "num_blocks": eng.manager.num_blocks,
