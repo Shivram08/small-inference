@@ -1,0 +1,6 @@
+rep 1 continuous-int8 sharegpt_n1000_seed0_rate2.89.jsonl: 383 s, achieved 2.7426 req/s, TTFT p50 0.09 s, TPOT p50 39.2 ms, overload False -> results/20261020-044306_continuous-int8_sharegpt_n1000_seed0_rate2.89
+rep 1 continuous-int8 sharegpt_n1000_seed0_rate4.34.jsonl: 261 s, achieved 4.0459 req/s, TTFT p50 0.10 s, TPOT p50 45.0 ms, overload False -> results/20261020-044959_continuous-int8_sharegpt_n1000_seed0_rate4.34
+rep 1 continuous-int8 sharegpt_n1000_seed0_rate5.79.jsonl: 200 s, achieved 5.3132 req/s, TTFT p50 0.12 s, TPOT p50 58.0 ms, overload False -> results/20261020-045452_continuous-int8_sharegpt_n1000_seed0_rate5.79
+rep 1 continuous-int8 sharegpt_n1000_seed0_burst.jsonl: 166 s, achieved 6.0013 req/s, TTFT p50 61.89 s, TPOT p50 168.8 ms, overload None -> results/20261020-045848_continuous-int8_sharegpt_n1000_seed0_burst
+rep 1 continuous-int8 sharegpt_n1000_seed0_rate1.45.jsonl: 737 s, achieved 1.4200 req/s, TTFT p50 0.09 s, TPOT p50 35.4 ms, overload False -> results/20261020-050205_continuous-int8_sharegpt_n1000_seed0_rate1.45
+done: results/20261020-044306_continuous-int8_campaign/manifest.json

@@ -1,0 +1,3 @@
+rep 1 continuous-int8: exit 0 -> results/20261020-044306_continuous-int8_campaign/manifest.json
+rep 1 continuous-int8k: exit 0 -> results/20261020-051459_continuous-int8k_campaign/manifest.json
+rep 1 continuous: exit 0 -> results/20261020-054700_continuous_campaign/manifest.json
