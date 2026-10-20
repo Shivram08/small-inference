@@ -54,6 +54,7 @@ bench/
   rate_plots.py    # throughput, p99 TPOT, p99 ITL vs offered rate from campaign manifests
   kv_quant_eval.py # Phase 5 three-config table: chunked-prefill quality, capacity, kernel timing
   make_figures.py  # rebuild every figure/table from raw logs (docs/figures/sources.json)
+  process_reps.py  # campaign repetitions as separate processes (engines that can't share the GPU)
   engines/
     base.py        # Engine protocol
     hf.py          # HF baseline adapter

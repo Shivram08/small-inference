@@ -70,3 +70,11 @@ class ContinuousEngine:
     def has_unfinished(self) -> bool:
         """True while any request is waiting or running."""
         return self.scheduler.has_unfinished()
+
+    def reset_stats(self) -> None:
+        """Zero the scheduler's memory-pressure counters."""
+        self.scheduler.reset_stats()
+
+    def stats(self) -> dict:
+        """Preemptions, peak running sequences, and peak pool use since the last reset (recorded in run.json)."""
+        return self.scheduler.stats() | {"kv_format": self.kv_format}

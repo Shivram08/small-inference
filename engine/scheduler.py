@@ -97,6 +97,18 @@ class Scheduler:
         self.running: list[Request] = []  # in admission order: the last one is preempted first
         self._arrivals = 0
         self.num_preemptions = 0
+        self.reset_stats()
+
+    def reset_stats(self) -> None:
+        """Zero the counters reported by stats() (the runner calls this after warm-up)."""
+        self.stat_preemptions, self.peak_running, self.peak_used_blocks, self.steps = 0, 0, 0, 0
+
+    def stats(self) -> dict:
+        """Memory-pressure counters since the last reset: preemptions, peak running sequences, peak blocks in use."""
+        m = self.manager
+        return {"preemptions": self.stat_preemptions, "peak_running_seqs": self.peak_running,
+                "peak_used_blocks": self.peak_used_blocks, "num_blocks": m.num_blocks,
+                "peak_pool_fraction": self.peak_used_blocks / m.num_blocks, "steps": self.steps}
 
     def add(self, req_id: int, prompt_ids: list[int], output_len: int) -> Request:
         """Queue a request. It must be able to fit in the whole pool on its own, or it could never run."""
@@ -120,6 +132,7 @@ class Scheduler:
         req.state, req.num_computed = State.PREEMPTED, 0
         req.num_preemptions += 1
         self.num_preemptions += 1
+        self.stat_preemptions += 1
         self.waiting.appendleft(req)
 
     def schedule(self) -> StepPlan:
@@ -168,6 +181,9 @@ class Scheduler:
             self.running.append(req)
             plan.seqs.append(ScheduledSeq(req, 0, n))
             budget -= n
+        self.steps += 1
+        self.peak_running = max(self.peak_running, len(self.running))
+        self.peak_used_blocks = max(self.peak_used_blocks, m.num_blocks - m.num_free_blocks())
         return plan
 
     def _prefill_chunk(self, req: Request, budget: int) -> int:

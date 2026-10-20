@@ -182,3 +182,17 @@ def test_rejects_impossible_requests(tiny):
         eng.add_request(1, [], 5)
     with pytest.raises(ValueError):
         eng.add_request(2, [1], 1)
+
+
+def test_stats_report_memory_pressure(tiny):
+    """stats() counts preemptions and peak pool use since reset; a pool the size of one request is fully used."""
+    reqs = make_requests(0)
+    need = max(-(-(len(p) + n) // 4) for p, n in reqs)
+    eng = engine(tiny, num_blocks=need, max_num_seqs=8)
+    eng.reset_stats()
+    run(eng, reqs)
+    st = eng.stats()
+    assert st["preemptions"] == eng.scheduler.num_preemptions > 0
+    assert st["peak_used_blocks"] == need and st["peak_pool_fraction"] == 1.0 and 1 < st["peak_running_seqs"] <= 8
+    eng.reset_stats()
+    assert eng.stats()["preemptions"] == 0

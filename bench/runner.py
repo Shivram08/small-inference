@@ -152,6 +152,8 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
         env["cpu_before"] = cpu_snapshot()
     env["mem_before"] = mem_snapshot()
     env["gpu_before"] = gpu_snapshot()
+    if hasattr(engine, "reset_stats"):  # optional: engines that report scheduler stats (preemptions, pool use)
+        engine.reset_stats()
     with Telemetry(run_dir) if telemetry else nullcontext():
         wall_start = time.time()
         records, steps = replay(engine, reqs)
@@ -173,6 +175,7 @@ def run(engine: Engine, trace_path: Path, engine_name: str, engine_config: dict 
         "wall_start_unix": wall_start,
         "wall_end_unix": wall_end,
         "telemetry": telemetry,
+        "engine_stats": engine.stats() if hasattr(engine, "stats") else None,
         "peak_rss_mib": resource.getrusage(resource.RUSAGE_SELF).ru_maxrss // 1024,  # whole process, incl. model load
     }, indent=2))
     return run_dir
