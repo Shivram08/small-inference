@@ -52,6 +52,9 @@ class QuantPagedKVCache(PagedKVCache):
             raise ValueError(f"fmt must be int8 or int8-kchannel, got {fmt}")
         self.fmt, self.n_stage = fmt, n_stage
         super().__init__(cfg, num_blocks, block_size, device, dtype, attn_backend)
+        # Fused Triton quantize-and-store (engine/triton_quant.py) on GPU pools; the torch reference otherwise. The
+        # two produce identical int8 values and scales; the fused path saves ~20 launches per layer.
+        self.fused_writes = torch.device(device).type == "cuda"
         if fmt == "int8-kchannel":
             if manager is None:
                 raise ValueError("int8-kchannel needs the BlockManager to track partial blocks")
@@ -121,6 +124,9 @@ class QuantPagedKVCache(PagedKVCache):
     def write(self, layer: int, k: torch.Tensor, v: torch.Tensor) -> None:
         """Quantize and store this forward's k, v [T, H_kv, d]."""
         m = self.meta
+        if self.fused_writes:
+            self._write_fused(layer, k, v)
+            return
         vq, vs = quantize_per_token(v)
         self.v[layer][:, m.slot_blocks, m.slot_offsets] = vq.transpose(0, 1)
         self.v_scale[layer][:, m.slot_blocks, m.slot_offsets] = vs.t()
@@ -142,6 +148,30 @@ class QuantPagedKVCache(PagedKVCache):
             blocks, rows = self._direct
             H, d = k.shape[1], k.shape[2]
             full = k[rows].view(-1, self.block_size, H, d).permute(2, 0, 1, 3).to(torch.bfloat16)  # [H, n, B, d]
+            kq, ks = quantize_per_channel(full, dim=2)
+            self.k[layer][:, blocks] = kq
+            self.k_scale[layer][:, blocks] = ks
+
+    def _write_fused(self, layer: int, k: torch.Tensor, v: torch.Tensor) -> None:
+        """write() through the fused kernels: V (and format A's K) per token in one launch each; format B's K is
+        staged, and blocks completed this forward are quantized from staging in one launch."""
+        from engine.triton_quant import quantize_store_blocks, quantize_store_tokens
+
+        m = self.meta
+        quantize_store_tokens(v, m.slot_blocks, m.slot_offsets, self.v[layer], self.v_scale[layer])
+        if self.fmt == "int8":
+            quantize_store_tokens(k, m.slot_blocks, m.slot_offsets, self.k[layer], self.k_scale[layer])
+            return
+        if self._staged is not None:
+            rows, slots, offs = self._staged
+            self.stage[layer][:, slots, offs] = k[rows].transpose(0, 1).to(torch.bfloat16)
+        if self._done is not None:
+            blocks, slots = self._done
+            quantize_store_blocks(self.stage[layer], slots, blocks, self.k[layer], self.k_scale[layer])
+        if self._direct is not None:  # prefill-chunk interiors: rarer, kept on the reference path
+            blocks, rows = self._direct
+            H, d = k.shape[1], k.shape[2]
+            full = k[rows].view(-1, self.block_size, H, d).permute(2, 0, 1, 3).to(torch.bfloat16)
             kq, ks = quantize_per_channel(full, dim=2)
             self.k[layer][:, blocks] = kq
             self.k_scale[layer][:, blocks] = ks

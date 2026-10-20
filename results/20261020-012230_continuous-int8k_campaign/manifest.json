@@ -1,0 +1,130 @@
+{
+  "engines": [
+    "continuous-int8k"
+  ],
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "kv_gib": 1.5,
+  "max_seqs": 256,
+  "n": 1000,
+  "seed": 0,
+  "fractions": [
+    0.3,
+    0.7,
+    1.2
+  ],
+  "order_seed": 2,
+  "idle_gpu_c": 54.0,
+  "cool_target_c": 57.0,
+  "runs": [
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "trace": "sharegpt_n1000_seed0_rate2.89.jsonl",
+      "run_dir": "results/20261020-012230_continuous-int8k_sharegpt_n1000_seed0_rate2.89",
+      "wall_s": 389.8606495857239,
+      "achieved_rate_req_s": 2.688153074534318,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.08399531000032,
+        "start_c": 66.0,
+        "end_c": 54.0,
+        "target_c": 57.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "trace": "sharegpt_n1000_seed0_rate1.45.jsonl",
+      "run_dir": "results/20261020-012931_continuous-int8k_sharegpt_n1000_seed0_rate1.45",
+      "wall_s": 746.3634390830994,
+      "achieved_rate_req_s": 1.3940945043433985,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.084964934998425,
+        "start_c": 63.0,
+        "end_c": 52.0,
+        "target_c": 57.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "trace": "sharegpt_n1000_seed0_rate4.34.jsonl",
+      "run_dir": "results/20261020-014228_continuous-int8k_sharegpt_n1000_seed0_rate4.34",
+      "wall_s": 266.5958170890808,
+      "achieved_rate_req_s": 3.927806780631522,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.102740012996946,
+        "start_c": 70.0,
+        "end_c": 56.0,
+        "target_c": 57.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "trace": "sharegpt_n1000_seed0_rate5.79.jsonl",
+      "run_dir": "results/20261020-014726_continuous-int8k_sharegpt_n1000_seed0_rate5.79",
+      "wall_s": 213.7561960220337,
+      "achieved_rate_req_s": 4.924556386341122,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 30.084619991997897,
+        "start_c": 71.0,
+        "end_c": 57.0,
+        "target_c": 57.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "trace": "sharegpt_n1000_seed0_burst.jsonl",
+      "run_dir": "results/20261020-015131_continuous-int8k_sharegpt_n1000_seed0_burst",
+      "wall_s": 191.3800437450409,
+      "achieved_rate_req_s": 5.172990526257485,
+      "overload": null,
+      "cooldown_after": {
+        "waited_s": 30.080097830999875,
+        "start_c": 72.0,
+        "end_c": 57.0,
+        "target_c": 57.0,
+        "timed_out": false
+      }
+    }
+  ],
+  "rates_req_s": [
+    1.45,
+    2.89,
+    4.34,
+    5.79
+  ],
+  "orders": [
+    [
+      [
+        "continuous-int8k",
+        "sharegpt_n1000_seed0_rate2.89.jsonl"
+      ],
+      [
+        "continuous-int8k",
+        "sharegpt_n1000_seed0_rate1.45.jsonl"
+      ],
+      [
+        "continuous-int8k",
+        "sharegpt_n1000_seed0_rate4.34.jsonl"
+      ],
+      [
+        "continuous-int8k",
+        "sharegpt_n1000_seed0_rate5.79.jsonl"
+      ],
+      [
+        "continuous-int8k",
+        "sharegpt_n1000_seed0_burst.jsonl"
+      ]
+    ]
+  ]
+}

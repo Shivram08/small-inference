@@ -1,0 +1,35 @@
+{
+  "engine": "continuous",
+  "engine_config": {
+    "model": "Qwen/Qwen2.5-1.5B-Instruct",
+    "dtype": "bfloat16",
+    "kv": "paged",
+    "kv_format": "bf16",
+    "kv_bytes": 1610612736,
+    "block_size": 16,
+    "num_blocks": 3510,
+    "attn": "triton decode + gather prefill",
+    "scheduler": {
+      "max_num_seqs": 256,
+      "max_num_batched_tokens": 512,
+      "chunked_prefill": true,
+      "watermark_blocks": 0
+    }
+  },
+  "trace": "traces/sharegpt_n1000_seed0_rate1.45.jsonl",
+  "n_requests": 1000,
+  "warmup_requests": 2,
+  "wall_start_unix": 1792469050.8186758,
+  "wall_end_unix": 1792469774.763524,
+  "telemetry": true,
+  "engine_stats": {
+    "preemptions": 0,
+    "peak_running_seqs": 22,
+    "peak_used_blocks": 431,
+    "num_blocks": 3510,
+    "peak_pool_fraction": 0.1227920227920228,
+    "steps": 21161,
+    "kv_format": "bf16"
+  },
+  "peak_rss_mib": 3553
+}

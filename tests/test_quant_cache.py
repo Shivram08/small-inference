@@ -239,3 +239,67 @@ def test_int8_preemption_mechanics_real(model16, long_prompt, fmt):
     assert eng.manager.num_free_blocks() == need
     if fmt == "int8-kchannel":
         assert eng.cache._stage_of == {} and len(eng.cache._free_stage) == eng.cache.n_stage
+
+
+# --- GPU: fused quantize-and-store kernels are bit-identical to the reference ------------------------------------
+
+@gpu
+@pytest.mark.parametrize("dtype", [torch.bfloat16, torch.float32], ids=["bf16", "fp32"])
+@pytest.mark.parametrize("D", [64, 128])
+def test_fused_token_quantization_is_exact(dtype, D):
+    """quantize_store_tokens writes exactly quantize_per_token's int8 values and fp16 scales, from a strided view
+    (as K arrives: a slice of the QKV output), including a zero vector."""
+    from engine.quant import quantize_per_token
+    from engine.triton_quant import quantize_store_tokens
+    g = torch.Generator(device="cuda").manual_seed(0)
+    big = torch.randn(37, 16, D, device="cuda", generator=g).to(dtype) * 3
+    x = big[:, 14:]  # [37, 2, D], row stride 16 * D
+    x[5, 1] = 0
+    N, B = 20, 16
+    blocks = torch.randperm(N, device="cuda")[:3].repeat_interleave(B)[:37]
+    offsets = torch.arange(37, device="cuda") % B
+    qp = torch.zeros(2, N, B, D, dtype=torch.int8, device="cuda")
+    sp = torch.zeros(2, N, B, dtype=torch.float16, device="cuda")
+    quantize_store_tokens(x, blocks, offsets, qp, sp)
+    q_ref, s_ref = quantize_per_token(x)
+    assert torch.equal(qp[:, blocks, offsets], q_ref.transpose(0, 1))
+    assert torch.equal(sp[:, blocks, offsets], s_ref.t())
+
+
+@gpu
+@pytest.mark.parametrize("D", [64, 128])
+def test_fused_block_quantization_is_exact(D):
+    """quantize_store_blocks writes exactly quantize_per_channel's int8 blocks and channel scales."""
+    from engine.quant import quantize_per_channel
+    from engine.triton_quant import quantize_store_blocks
+    g = torch.Generator(device="cuda").manual_seed(1)
+    stage = (torch.randn(2, 8, 16, D, device="cuda", generator=g) * torch.rand(1, 1, 1, D, device="cuda",
+                                                                                generator=g) * 4).bfloat16()
+    src = torch.tensor([3, 0, 6], device="cuda")
+    dst = torch.tensor([11, 2, 7], device="cuda")
+    qp = torch.zeros(2, 12, 16, D, dtype=torch.int8, device="cuda")
+    sp = torch.zeros(2, 12, D, dtype=torch.float16, device="cuda")
+    quantize_store_blocks(stage, src, dst, qp, sp)
+    q_ref, s_ref = quantize_per_channel(stage[:, src], dim=2)
+    assert torch.equal(qp[:, dst], q_ref) and torch.equal(sp[:, dst], s_ref)
+
+
+@gpu
+@pytest.mark.parametrize("fmt", FMTS)
+def test_fused_cache_writes_match_reference_cache(fmt):
+    """A whole chunked fill through the fused write path leaves the same pool contents as the reference path."""
+    from engine.config import ModelConfig
+    cfg = ModelConfig(vocab_size=10, hidden_size=14 * 64, intermediate_size=16, num_layers=1, num_q_heads=14,
+                      num_kv_heads=2, head_dim=64, rms_norm_eps=1e-6, rope_theta=1e4, max_position_embeddings=4096,
+                      tie_word_embeddings=True)
+    g = torch.Generator(device="cuda").manual_seed(2)
+    k = torch.randn(83, 2, 64, device="cuda", generator=g).bfloat16()
+    v = torch.randn(83, 2, 64, device="cuda", generator=g).bfloat16()
+    pools = []
+    for fused in (False, True):
+        m, cache = make_cache(fmt, num_blocks=12, B=16, device="cuda", dtype=torch.bfloat16, cfg=cfg)
+        cache.fused_writes = fused
+        write_chunks(m, cache, 0, k, v, [5, 40, 1, 1, 30, 1, 5])  # partial, interior, single-token, boundary
+        pools.append((cache.k.clone(), cache.v.clone(), cache.k_scale.clone(), cache.v_scale.clone()))
+    for a, b in zip(*pools):
+        assert torch.equal(a, b)
