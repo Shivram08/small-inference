@@ -1,0 +1,109 @@
+{
+  "gpu_interval_s": 1.0,
+  "cpu_interval_s": 2,
+  "notes": {},
+  "gpu": {
+    "n_samples": 187,
+    "span_s": 206.27500009536743,
+    "busy_fraction": 0.9572192513368984,
+    "reason_active_fraction_while_busy": {
+      "applications_clocks_setting": 0.0,
+      "sw_power_cap": 0.18994413407821228,
+      "hw_slowdown": 0.0,
+      "sync_boost": 0.0,
+      "sw_thermal_slowdown": 0.0223463687150838,
+      "hw_thermal_slowdown": 0.0,
+      "hw_power_brake_slowdown": 0.0,
+      "display_clock_setting": 0.0,
+      "reliability": 0.8379888268156425
+    },
+    "temperature_c": {
+      "min": 60.0,
+      "p50": 85.0,
+      "mean": 83.20855614973262,
+      "max": 87.0
+    },
+    "sm_clock_mhz": {
+      "min": 1837.0,
+      "p50": 1905.0,
+      "mean": 1899.9625668449198,
+      "max": 1927.0
+    },
+    "mem_clock_mhz": {
+      "min": 7001.0,
+      "p50": 7001.0,
+      "mean": 7001.0,
+      "max": 7001.0
+    },
+    "power_w": {
+      "min": 21.51,
+      "p50": 68.44,
+      "mean": 67.34598930481283,
+      "max": 81.04
+    },
+    "pstate_fraction": {
+      "P0": 1.0
+    },
+    "throttle": {
+      "sw_power_cap": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_thermal_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "hw_power_brake_slowdown": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      },
+      "sync_boost": {
+        "us": 0.0,
+        "resets": 0,
+        "fraction_of_span": 0.0
+      }
+    }
+  },
+  "cpu": {
+    "n_samples": 102,
+    "span_s": 202.63,
+    "busiest_class_fraction": {
+      "P": 1.0
+    },
+    "busiest_class_switches": 0,
+    "busiest_effective_mhz": {
+      "min": 2431.596326674298,
+      "p50": 3562.270000388491,
+      "mean": 3533.962605118291,
+      "max": 4399.212528158027
+    },
+    "effective_mhz_by_class": {
+      "E": {
+        "min": 277.7968864089262,
+        "p50": 312.1633400194646,
+        "mean": 354.4808412660604,
+        "max": 598.6221769869594
+      },
+      "LPE": {
+        "min": 345.3241762991006,
+        "p50": 384.3837050098885,
+        "mean": 385.59089625337106,
+        "max": 433.19106863165143
+      },
+      "P": {
+        "min": 2423.3010297298424,
+        "p50": 3050.607831800596,
+        "mean": 3076.0816103545208,
+        "max": 3818.51273965616
+      }
+    }
+  }
+}

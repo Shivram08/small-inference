@@ -35,14 +35,48 @@
   },
   "phase5_rates": {
     "kind": "rates",
-    "manifests": [],
+    "manifests": [
+      "results/20261021-023347_continuous-int8_campaign/manifest.json",
+      "results/20261021-030706_continuous-int8k_campaign/manifest.json",
+      "results/20261021-034035_continuous_campaign/manifest.json",
+      "results/20261021-041420_continuous-int8k_campaign/manifest.json",
+      "results/20261021-044752_continuous-int8_campaign/manifest.json",
+      "results/20261021-052103_continuous_campaign/manifest.json",
+      "results/20261021-055447_continuous-int8k_campaign/manifest.json",
+      "results/20261021-062817_continuous-int8_campaign/manifest.json",
+      "results/20261021-070120_continuous_campaign/manifest.json"
+    ],
     "out": "docs/figures/phase5",
-    "pending": "deferred item 11"
+    "note": "results/20261021-023340_process_reps: 3 reps, one process per format, fused INT8 writes"
   },
   "phase6_vs_vllm": {
     "kind": "rates",
     "manifests": [],
     "out": "docs/figures/phase6",
     "pending": "deferred items 13-15"
+  },
+  "phase5_serving_table": {
+    "kind": "serving_table",
+    "manifests": [
+      "results/20261021-023347_continuous-int8_campaign/manifest.json",
+      "results/20261021-030706_continuous-int8k_campaign/manifest.json",
+      "results/20261021-034035_continuous_campaign/manifest.json",
+      "results/20261021-041420_continuous-int8k_campaign/manifest.json",
+      "results/20261021-044752_continuous-int8_campaign/manifest.json",
+      "results/20261021-052103_continuous_campaign/manifest.json",
+      "results/20261021-055447_continuous-int8k_campaign/manifest.json",
+      "results/20261021-062817_continuous-int8_campaign/manifest.json",
+      "results/20261021-070120_continuous_campaign/manifest.json"
+    ],
+    "out": "docs/figures/phase5",
+    "filename": "serving_1.5B.md"
+  },
+  "phase4_serving_table": {
+    "kind": "serving_table",
+    "manifests": [
+      "results/20261019-195616_continuous_continuous-nochunk_campaign/manifest.json"
+    ],
+    "out": "docs/figures/phase4",
+    "filename": "serving_0.5B.md"
   }
 }

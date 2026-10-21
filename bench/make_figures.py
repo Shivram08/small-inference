@@ -33,6 +33,14 @@ def build(name: str, spec: dict) -> list[Path] | None:
             return None
         from bench.rate_plots import collect, plot
         return [plot(collect([Path(m) for m in spec["manifests"]]), out)]
+    if kind == "serving_table":
+        if not spec.get("manifests"):
+            return None
+        from bench.rate_plots import serving_table_md
+        out.mkdir(parents=True, exist_ok=True)
+        path = out / spec.get("filename", "serving.md")
+        path.write_text(serving_table_md([Path(m) for m in spec["manifests"]]))
+        return [path]
     if kind == "kv_quant_table":
         if not spec.get("results"):
             return None

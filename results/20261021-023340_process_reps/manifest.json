@@ -1,0 +1,77 @@
+{
+  "engines": [
+    "continuous",
+    "continuous-int8",
+    "continuous-int8k"
+  ],
+  "reps": 3,
+  "order_seed": 2,
+  "child_args": [
+    "--model",
+    "Qwen/Qwen2.5-1.5B-Instruct",
+    "--kv-gib",
+    "1.5",
+    "--max-seqs",
+    "256",
+    "--n",
+    "1000",
+    "--rates",
+    "1.45,2.89,4.34,5.79"
+  ],
+  "children": [
+    {
+      "rep": 1,
+      "engine": "continuous-int8",
+      "returncode": 0,
+      "manifest": "results/20261021-023347_continuous-int8_campaign/manifest.json"
+    },
+    {
+      "rep": 1,
+      "engine": "continuous-int8k",
+      "returncode": 0,
+      "manifest": "results/20261021-030706_continuous-int8k_campaign/manifest.json"
+    },
+    {
+      "rep": 1,
+      "engine": "continuous",
+      "returncode": 0,
+      "manifest": "results/20261021-034035_continuous_campaign/manifest.json"
+    },
+    {
+      "rep": 2,
+      "engine": "continuous-int8k",
+      "returncode": 0,
+      "manifest": "results/20261021-041420_continuous-int8k_campaign/manifest.json"
+    },
+    {
+      "rep": 2,
+      "engine": "continuous-int8",
+      "returncode": 0,
+      "manifest": "results/20261021-044752_continuous-int8_campaign/manifest.json"
+    },
+    {
+      "rep": 2,
+      "engine": "continuous",
+      "returncode": 0,
+      "manifest": "results/20261021-052103_continuous_campaign/manifest.json"
+    },
+    {
+      "rep": 3,
+      "engine": "continuous-int8k",
+      "returncode": 0,
+      "manifest": "results/20261021-055447_continuous-int8k_campaign/manifest.json"
+    },
+    {
+      "rep": 3,
+      "engine": "continuous-int8",
+      "returncode": 0,
+      "manifest": "results/20261021-062817_continuous-int8_campaign/manifest.json"
+    },
+    {
+      "rep": 3,
+      "engine": "continuous",
+      "returncode": 0,
+      "manifest": "results/20261021-070120_continuous_campaign/manifest.json"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+rep 1 continuous-int8: exit 0 -> results/20261021-023347_continuous-int8_campaign/manifest.json
+rep 1 continuous-int8k: exit 0 -> results/20261021-030706_continuous-int8k_campaign/manifest.json
+rep 1 continuous: exit 0 -> results/20261021-034035_continuous_campaign/manifest.json
+rep 2 continuous-int8k: exit 0 -> results/20261021-041420_continuous-int8k_campaign/manifest.json
+rep 2 continuous-int8: exit 0 -> results/20261021-044752_continuous-int8_campaign/manifest.json
+rep 2 continuous: exit 0 -> results/20261021-052103_continuous_campaign/manifest.json
+rep 3 continuous-int8k: exit 0 -> results/20261021-055447_continuous-int8k_campaign/manifest.json
+rep 3 continuous-int8: exit 0 -> results/20261021-062817_continuous-int8_campaign/manifest.json
+rep 3 continuous: exit 0 -> results/20261021-070120_continuous_campaign/manifest.json
+done: results/20261021-023340_process_reps/manifest.json
+exit 0
