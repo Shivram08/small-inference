@@ -1,0 +1,172 @@
+{
+  "engines": [
+    "vllm"
+  ],
+  "model": null,
+  "kv_gib": 1.5,
+  "max_seqs": 64,
+  "n": 1000,
+  "seed": 0,
+  "fractions": [
+    0.3,
+    0.7,
+    1.2
+  ],
+  "order_seed": 1,
+  "idle_gpu_c": 53.0,
+  "cool_target_c": 56.0,
+  "runs": [
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate5.19.jsonl",
+      "run_dir": "results/20261021-212854_vllm_sharegpt_n1000_seed0_rate5.19",
+      "wall_s": 219.41573810577393,
+      "achieved_rate_req_s": 5.114223236736343,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 80.42951961000017,
+        "start_c": 79.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate10.4.jsonl",
+      "run_dir": "results/20261021-213403_vllm_sharegpt_n1000_seed0_rate10.4",
+      "wall_s": 113.99988031387329,
+      "achieved_rate_req_s": 10.039357055164379,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 75.37762886999985,
+        "start_c": 77.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate8.65.jsonl",
+      "run_dir": "results/20261021-213718_vllm_sharegpt_n1000_seed0_rate8.65",
+      "wall_s": 136.1665267944336,
+      "achieved_rate_req_s": 8.407696347225944,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 75.36416029599991,
+        "start_c": 80.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate3.46.jsonl",
+      "run_dir": "results/20261021-214058_vllm_sharegpt_n1000_seed0_rate3.46",
+      "wall_s": 325.72022914886475,
+      "achieved_rate_req_s": 3.4303270750226136,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 80.364689408,
+        "start_c": 79.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_burst.jsonl",
+      "run_dir": "results/20261021-214750_vllm_sharegpt_n1000_seed0_burst",
+      "wall_s": 62.27609610557556,
+      "achieved_rate_req_s": 18.446920223267888,
+      "overload": null,
+      "cooldown_after": {
+        "waited_s": 603.648495765,
+        "start_c": 76.0,
+        "end_c": 59.0,
+        "target_c": 56.0,
+        "timed_out": true
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate6.92.jsonl",
+      "run_dir": "results/20261021-215952_vllm_sharegpt_n1000_seed0_rate6.92",
+      "wall_s": 168.54231190681458,
+      "achieved_rate_req_s": 6.7740380544599095,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 55.24430330899986,
+        "start_c": 76.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    },
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "trace": "sharegpt_n1000_seed0_rate1.73.jsonl",
+      "run_dir": "results/20261021-220339_vllm_sharegpt_n1000_seed0_rate1.73",
+      "wall_s": 650.9755027294159,
+      "achieved_rate_req_s": 1.7255652342440337,
+      "overload": false,
+      "cooldown_after": {
+        "waited_s": 55.221428039999864,
+        "start_c": 77.0,
+        "end_c": 56.0,
+        "target_c": 56.0,
+        "timed_out": false
+      }
+    }
+  ],
+  "rates_req_s": [
+    1.73,
+    3.46,
+    5.19,
+    6.92,
+    8.65,
+    10.4
+  ],
+  "orders": [
+    [
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate5.19.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate10.4.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate8.65.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate3.46.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_burst.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate6.92.jsonl"
+      ],
+      [
+        "vllm",
+        "sharegpt_n1000_seed0_rate1.73.jsonl"
+      ]
+    ]
+  ]
+}

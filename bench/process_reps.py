@@ -12,8 +12,10 @@ Usage: python -m bench.process_reps --engines continuous,continuous-int8,continu
 
 import argparse
 import json
+import os
 import random
 import re
+import signal
 import subprocess
 import sys
 from datetime import datetime
@@ -32,6 +34,10 @@ def main() -> None:
     p.add_argument("--results-root", type=Path, default=Path("results"))
     p.add_argument("--python", action="append", default=[], metavar="ENGINE=PATH",
                    help="interpreter for one engine (e.g. continuous=.venv/bin/python while vLLM runs from its venv)")
+    p.add_argument("--child-timeout-s", type=float, default=None,
+                   help="kill a child (and its whole process group, e.g. vLLM's engine core) after this long")
+    p.add_argument("--resume", type=Path, default=None,
+                   help="a previous process_reps folder: reuse its children that exited 0, rerun the rest in order")
     args = p.parse_args(sys.argv[1:split])
     pythons = dict(x.split("=", 1) for x in args.python)
     child_args = sys.argv[split + 1:]
@@ -42,21 +48,40 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=False)
     rng = random.Random(args.order_seed)
     manifest = {"engines": args.engines.split(","), "reps": args.reps, "order_seed": args.order_seed,
-                "child_args": child_args, "pythons": pythons, "children": []}
+                "child_args": child_args, "pythons": pythons, "child_timeout_s": args.child_timeout_s,
+                "resumed_from": str(args.resume) if args.resume else None, "children": []}
+    reuse = {}
+    if args.resume:
+        for c in json.loads((args.resume / "manifest.json").read_text())["children"]:
+            if c["returncode"] == 0 and c["manifest"]:
+                reuse[(c["rep"], c["engine"])] = c
     for rep in range(1, args.reps + 1):
         order = list(manifest["engines"])
         rng.shuffle(order)
         for engine in order:
+            if (rep, engine) in reuse:
+                manifest["children"].append(reuse[(rep, engine)] | {"reused": True})
+                (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
+                print(f"rep {rep} {engine}: reused -> {reuse[(rep, engine)]['manifest']}", flush=True)
+                continue
             cmd = [pythons.get(engine, sys.executable), "-m", "bench.baseline", "--engines", engine, "--reps", "1",
                    "--order-seed", str(rep), "--results-root", str(args.results_root), *child_args]
-            proc = subprocess.run(cmd, capture_output=True, text=True)
-            done = re.search(r"^done: (.+manifest\.json)$", proc.stdout, re.M)
-            manifest["children"].append({"rep": rep, "engine": engine, "returncode": proc.returncode,
+            # Own process group, so a timeout also kills the child's own subprocesses (vLLM's engine core).
+            proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                                    start_new_session=True)
+            try:
+                text, _ = proc.communicate(timeout=args.child_timeout_s)
+                code = proc.returncode
+            except subprocess.TimeoutExpired:
+                os.killpg(proc.pid, signal.SIGKILL)
+                text, _ = proc.communicate()
+                code = "timeout"
+            done = re.search(r"^done: (.+manifest\.json)$", text, re.M)
+            manifest["children"].append({"rep": rep, "engine": engine, "returncode": code,
                                          "manifest": done.group(1) if done else None})
             (out / "manifest.json").write_text(json.dumps(manifest, indent=2))
-            (out / f"rep{rep}_{engine}.log").write_text(proc.stdout + proc.stderr)
-            print(f"rep {rep} {engine}: exit {proc.returncode} -> {done.group(1) if done else 'no manifest'}",
-                  flush=True)
+            (out / f"rep{rep}_{engine}.log").write_text(text)
+            print(f"rep {rep} {engine}: exit {code} -> {done.group(1) if done else 'no manifest'}", flush=True)
     print(f"done: {out / 'manifest.json'}")
 
 

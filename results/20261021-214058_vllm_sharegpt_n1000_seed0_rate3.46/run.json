@@ -1,0 +1,29 @@
+{
+  "engine": "vllm",
+  "engine_config": {
+    "engine": "vllm",
+    "vllm_version": "0.32.0",
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "dtype": "bfloat16",
+    "enforce_eager": false,
+    "gpu_memory_utilization": 0.462,
+    "max_model_len": 2048,
+    "max_num_seqs": 64,
+    "max_num_batched_tokens": 512,
+    "enable_prefix_caching": false,
+    "enable_chunked_prefill": true,
+    "seed": 0,
+    "VLLM_ENABLE_V1_MULTIPROCESSING": null,
+    "num_gpu_blocks": 8334,
+    "block_size": 16,
+    "target_kv_bytes": 1610612736
+  },
+  "trace": "traces/sharegpt_n1000_seed0_rate3.46.jsonl",
+  "n_requests": 1000,
+  "warmup_requests": 2,
+  "wall_start_unix": 1792633260.725702,
+  "wall_end_unix": 1792633581.4655583,
+  "telemetry": true,
+  "engine_stats": null,
+  "peak_rss_mib": 1278
+}

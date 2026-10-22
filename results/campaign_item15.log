@@ -1,0 +1,2 @@
+rep 1 vllm: exit 0 -> results/20261021-212854_vllm_campaign/manifest.json
+exit 143
