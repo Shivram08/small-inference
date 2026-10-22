@@ -53,7 +53,9 @@ def load_engine(name: str, model_id: str | None = None, kv_bytes: int = CONTINUO
         import os
 
         from bench.engines.vllm_engine import VLLMEngine
-        util = float(os.environ.get("VLLM_GPU_MEMORY_UTILIZATION", "0.6"))  # tune to match kv_bytes; see adapter
+        # Tuned per mode so vLLM's KV cache matches our pool (CUDA graphs need a little more for their pools).
+        var = "VLLM_EAGER_GPU_MEMORY_UTILIZATION" if name == "vllm-eager" else "VLLM_GPU_MEMORY_UTILIZATION"
+        util = float(os.environ.get(var, "0.6"))
         eng = VLLMEngine(model_id or DEFAULT_MODEL, enforce_eager=name == "vllm-eager", gpu_memory_utilization=util)
         return eng, eng.config() | {"target_kv_bytes": kv_bytes}
     if name == "fake":

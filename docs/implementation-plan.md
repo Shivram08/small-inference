@@ -139,7 +139,7 @@ Every milestone runs through the same loop: concept discussion with real numbers
 
 ## Phase 6: Benchmark vs. vLLM and write-up
 
-- [~] Separate vLLM venv, memory-matched configs (eager and CUDA graphs). Adapter written against vLLM's public API (`bench/engines/vllm_engine.py`: greedy, `ignore_eos`, `min_tokens = max_tokens`, no prefix caching, the same 64-sequence / 512-token limits; engines `vllm`, `vllm-eager`; `VLLM_GPU_MEMORY_UTILIZATION` to match the 1.5 GiB pool; records vLLM's block count). Test: `tests/test_vllm_engine.py` (skipped outside the vLLM venv). Pending: items 13–15 in `docs/deferred-runs.md`
+- [~] Separate vLLM venv, memory-matched configs (eager and CUDA graphs). Adapter written against vLLM's public API (`bench/engines/vllm_engine.py`: greedy, `ignore_eos`, `min_tokens = max_tokens`, no prefix caching, the same 64-sequence / 512-token limits; engines `vllm`, `vllm-eager`; `VLLM_GPU_MEMORY_UTILIZATION` to match the 1.5 GiB pool; records vLLM's block count). Test: `tests/test_vllm_engine.py` passes in the vLLM venv (2026-10-21; **vLLM 0.32.0**, torch 2.13.0+cu130). KV matched to our 131,072 tokens: eager 131,088 (`gpu_memory_utilization` 0.432), CUDA graphs 133,344 (0.462). Comparison run: item 15
 - [x] One script that rebuilds every plot from raw logs: `bench/make_figures.py` over `docs/figures/sources.json` (Phase 0 figures regenerate byte-identical; the Phase 5 0.5B table regenerates; other groups pending their runs)
 - [ ] README with design, results, and limitations. Go through Heiser's checklist first. Written after the deferred measurements (item 16)
 

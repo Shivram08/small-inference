@@ -30,7 +30,10 @@ def main() -> None:
     p.add_argument("--reps", type=int, default=3)
     p.add_argument("--order-seed", type=int, default=0)
     p.add_argument("--results-root", type=Path, default=Path("results"))
+    p.add_argument("--python", action="append", default=[], metavar="ENGINE=PATH",
+                   help="interpreter for one engine (e.g. continuous=.venv/bin/python while vLLM runs from its venv)")
     args = p.parse_args(sys.argv[1:split])
+    pythons = dict(x.split("=", 1) for x in args.python)
     child_args = sys.argv[split + 1:]
     if "--rates" not in child_args:
         sys.exit("child arguments must include --rates (all engines must replay the same traces)")
@@ -39,12 +42,12 @@ def main() -> None:
     out.mkdir(parents=True, exist_ok=False)
     rng = random.Random(args.order_seed)
     manifest = {"engines": args.engines.split(","), "reps": args.reps, "order_seed": args.order_seed,
-                "child_args": child_args, "children": []}
+                "child_args": child_args, "pythons": pythons, "children": []}
     for rep in range(1, args.reps + 1):
         order = list(manifest["engines"])
         rng.shuffle(order)
         for engine in order:
-            cmd = [sys.executable, "-m", "bench.baseline", "--engines", engine, "--reps", "1",
+            cmd = [pythons.get(engine, sys.executable), "-m", "bench.baseline", "--engines", engine, "--reps", "1",
                    "--order-seed", str(rep), "--results-root", str(args.results_root), *child_args]
             proc = subprocess.run(cmd, capture_output=True, text=True)
             done = re.search(r"^done: (.+manifest\.json)$", proc.stdout, re.M)
