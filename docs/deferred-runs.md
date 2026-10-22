@@ -13,6 +13,8 @@ When an item has run: record the result folder and the outcome in `docs/implemen
 
 ## Queue (run in this order)
 
+**On hold (2026-10-22, user):** no further runs after the resumed item-15 campaign until the user says so. Item 5 and item 16 wait.
+
 | # | What | Command | Time | Load | Unlocks |
 |---|---|---|---|---|---|
 | 1 | Harness self-test, after the runner change of 2026-10-19 (memory snapshots, telemetry hook) | `.venv/bin/python -m pytest -m slow` | ~35 s | 1 core | M0.4 still valid with the new runner |
