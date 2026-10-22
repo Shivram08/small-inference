@@ -13,7 +13,7 @@ When an item has run: record the result folder and the outcome in `docs/implemen
 
 ## Queue (run in this order)
 
-**On hold (2026-10-22, user):** no further runs after the resumed item-15 campaign until the user says so. Item 5 and item 16 wait.
+**On hold (2026-10-22, user): all testing stopped.** The resumed item-15 campaign (`results/<stamp>_process_reps` started 11:42, resuming `20261021-212822_process_reps`) was stopped by the user during its first new child (vLLM eager, repetition 1; `results/20261022-114240_vllm-eager_..._rate5.19` holds telemetry only and is not to be used). Completed and usable: vLLM CUDA graphs, repetition 1 (`results/20261021-212854_vllm_campaign`). To continue later: resume with `--resume <that process_reps folder>`. Item 5 and item 16 wait too.
 
 | # | What | Command | Time | Load | Unlocks |
 |---|---|---|---|---|---|

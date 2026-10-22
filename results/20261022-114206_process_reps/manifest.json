@@ -1,0 +1,29 @@
+{
+  "engines": [
+    "continuous",
+    "vllm",
+    "vllm-eager"
+  ],
+  "reps": 3,
+  "order_seed": 3,
+  "child_args": [
+    "--n",
+    "1000",
+    "--rates",
+    "1.73,3.46,5.19,6.92,8.65,10.4"
+  ],
+  "pythons": {
+    "continuous": ".venv/bin/python"
+  },
+  "child_timeout_s": 7200.0,
+  "resumed_from": "results/20261021-212822_process_reps",
+  "children": [
+    {
+      "rep": 1,
+      "engine": "vllm",
+      "returncode": 0,
+      "manifest": "results/20261021-212854_vllm_campaign/manifest.json",
+      "reused": true
+    }
+  ]
+}
